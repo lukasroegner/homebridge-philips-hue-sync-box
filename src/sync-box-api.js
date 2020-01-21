@@ -172,7 +172,7 @@ SyncBoxApi.prototype.handlePost = function (body, response) {
     }
 
     // Updates the state
-    api.platform.limiter.schedule(function() { return platform.client.updateExecution(newState); }).then(function() {
+    api.platform.limiter.schedule(function() { return api.platform.client.updateExecution(newState); }).then(function() {
         response.statusCode = 200;
         response.end();
     }, function() {
