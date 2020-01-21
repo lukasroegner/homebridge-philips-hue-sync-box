@@ -3,6 +3,7 @@ const Bottleneck = require('bottleneck');
 
 const PhilipsHueSyncBoxClient = require('./philips-hue-sync-box-client');
 const SyncBoxDevice = require('./sync-box-device');
+const SyncBoxApi = require('./sync-box-api');
 
 /**
  * Initializes a new platform instance for the Philips Hue Sync Box plugin.
@@ -38,6 +39,9 @@ function PhilipsHueSyncBoxPlatform(log, config, api) {
     platform.config.syncBoxIpAddress = platform.config.syncBoxIpAddress || null;
     platform.config.syncBoxApiAccessToken = platform.config.syncBoxApiAccessToken || null;
     platform.config.defaultMode = platform.config.defaultMode || 'video';
+    platform.config.isApiEnabled = platform.config.isApiEnabled || false;
+    platform.config.apiPort = platform.config.apiPort || 40220;
+    platform.config.apiToken = platform.config.apiToken || null;
     platform.config.requestsPerSecond = 5;
     platform.config.updateInterval = 10000;
 
@@ -88,6 +92,11 @@ function PhilipsHueSyncBoxPlatform(log, config, api) {
             
             // Initialization completed
             platform.log('Initialization completed.');
+
+            // Starts the API if requested
+            if (platform.config.isApiEnabled) {
+                platform.syncBoxApi = new SyncBoxApi(platform);
+            }
         }, function() {
             platform.log('Error while getting the state. Please check the access token.');
         });
