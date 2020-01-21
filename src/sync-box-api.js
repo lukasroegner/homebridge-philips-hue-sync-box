@@ -57,7 +57,7 @@ function SyncBoxApi(platform) {
                 if (payload && payload.length > 0) {
                     try {
                         body = JSON.parse(Buffer.concat(payload).toString());
-                    } catch {
+                    } catch (e) {
                         api.platform.log('Body malformed.');
                         response.statusCode = 400;
                         response.end();
