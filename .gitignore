@@ -59,3 +59,8 @@ typings/
 
 # next.js build output
 .next
+
+# local homebridge
+accessories
+persist
+config.json
