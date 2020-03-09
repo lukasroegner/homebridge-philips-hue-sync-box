@@ -155,13 +155,13 @@ SyncBoxApi.prototype.handlePost = function (body, response) {
         if (body.options.video) {
             newState.video = {
                 intensity: body.options.video.intensity,
-                backgroundLighting: body.options.video.intensity
+                backgroundLighting: body.options.video.backgroundLighting
             };
         }
         if (body.options.game) {
             newState.game = {
                 intensity: body.options.game.intensity,
-                backgroundLighting: body.options.game.intensity
+                backgroundLighting: body.options.game.backgroundLighting
             };
         }
         if (body.options.music) {
