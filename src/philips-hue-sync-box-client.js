@@ -33,6 +33,16 @@ PhilipsHueSyncBoxClient.prototype.updateExecution = function (settings) {
 }
 
 /**
+ * Updates the Hue settings of the Sync Box.
+ */
+PhilipsHueSyncBoxClient.prototype.updateHue = function (settings) {
+    const client = this;
+    
+    // Sends the request
+    return client.send('PUT', '/hue', settings);
+}
+
+/**
  * Sends an HTTP request to the Sync Box.
  * @param method The HTTP method.
  * @param uri The uri path to the endpoint.

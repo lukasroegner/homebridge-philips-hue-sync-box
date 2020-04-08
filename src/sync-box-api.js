@@ -97,6 +97,7 @@ SyncBoxApi.prototype.handleGet = function (response) {
     api.platform.limiter.schedule(function() { return api.platform.client.getState(); }).then(function(state) {
         response.setHeader('Content-Type', 'application/json');
         response.write(JSON.stringify({
+            groupId: state.hue.groupId,
             mode: state.execution.mode,
             lastSyncMode: state.execution.lastSyncMode,
             brightness: Math.round((state.execution.brightness / 200.0) * 100),
@@ -142,16 +143,21 @@ SyncBoxApi.prototype.handlePost = function (body, response) {
 
     // Defines the new state
     const newState = {};
+    let updateExecution = false;
     if (body.brightness) {
+        updateExecution = true;
         newState.brightness = Math.round((body.brightness / 100.0) * 200);
     }
     if (body.mode) {
+        updateExecution = true;
         newState.mode = body.mode;
     }
     if (body.hdmiSource) {
+        updateExecution = true;
         newState.hdmiSource = body.hdmiSource;
     }
     if (body.options) {
+        updateExecution = true;
         if (body.options.video) {
             newState.video = {
                 intensity: body.options.video.intensity,
@@ -171,8 +177,21 @@ SyncBoxApi.prototype.handlePost = function (body, response) {
         }
     }
 
-    // Updates the state
-    api.platform.limiter.schedule(function() { return api.platform.client.updateExecution(newState); }).then(function() {
+    // Defines the promises that should be resolved
+    const promises = [];
+
+    // Updates the execution state
+    if (updateExecution) {
+        promises.push(api.platform.limiter.schedule(function() { return api.platform.client.updateExecution(newState); }));
+    }
+
+    // Updates the Hue state
+    if (body.groupId) {
+        promises.push(api.platform.limiter.schedule(function() { return api.platform.client.updateHue({ groupId: body.groupId }); }));
+    }
+
+    // Waits for all promises to resolve
+    Promise.all(promises).then(function() {
         response.statusCode = 200;
         response.end();
     }, function() {

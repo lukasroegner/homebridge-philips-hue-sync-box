@@ -83,6 +83,7 @@ http://<YOUR-HOST-IP-ADDRESS>:<apiPort>/state
 The response is a JSON response, the following properties are included:
 ```
 {
+    groupId: '<group-number>',
     mode: 'passthrough|powersave|video|game|music',
     lastSyncMode: 'video|game|music',
     brightness: 0-100,
@@ -113,6 +114,7 @@ http://<YOUR-HOST-IP-ADDRESS>:<apiPort>/state
 The body of the request has to be JSON and can contain any/some/all of the following values:
 ```
 {
+    groupId: '<group-number>',
     mode: 'passthrough|powersave|video|game|music',
     brightness: 0-100,
     hdmiSource: 'input1|input2|input3|input4',
