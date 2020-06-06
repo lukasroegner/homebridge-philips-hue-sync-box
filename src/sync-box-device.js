@@ -197,11 +197,11 @@ SyncBoxDevice.prototype.update = function (state) {
     if (device.tvService) {
 
         // Updates the on characteristic
-        device.platform.log('Updated state to ' + state.execution.mode);
+        device.platform.log.debug('Updated state to ' + state.execution.mode);
         device.tvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave');
 
         // Updates the HDMI input characteristic
-        device.platform.log('Updated HDMI input to ' + state.execution.hdmiSource);
+        device.platform.log.debug('Updated HDMI input to ' + state.execution.hdmiSource);
         device.tvService.updateCharacteristic(Characteristic.ActiveIdentifier, parseInt(state.execution.hdmiSource.replace('input', '')));
 
     }
