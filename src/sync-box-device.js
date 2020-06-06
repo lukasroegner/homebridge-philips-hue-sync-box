@@ -137,7 +137,7 @@ function SyncBoxDevice(platform, state) {
 
         // Saves the changes
         platform.log('Switch state to ' + (value ? 'ON' : 'OFF'));
-        platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': value ? platform.config.defaultOnMode : platform.config.defaultOffMode }); }).then(function() {}, function() {
+        platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': value ? platform.config.defaultOnMode : 'powersave' }); }).then(function() {}, function() {
             platform.log('Failed to switch state to ' + (value ? 'ON' : 'OFF'));
         });
 
