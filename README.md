@@ -5,6 +5,7 @@ Homebridge plugin for the Philips Hue Sync Box.
 The Sync Box is exposed as a lightbulb. The following features are currently supported:
 * On/Off
 * Brightness
+* Switching HDMI inputs
 
 ## Installation
 
@@ -37,6 +38,7 @@ You have to create new credentials to communicate with the Philips Hue Sync Box:
             "syncBoxApiAccessToken": "<ACCESS-TOKEN>",
             "defaultOnMode": "video",
             "defaultOffMode": "passthrough",
+            "tvAccessory": true,
             "isApiEnabled": false,
             "apiPort": 40220,
             "apiToken": "<YOUR-TOKEN>"
@@ -52,6 +54,8 @@ You have to create new credentials to communicate with the Philips Hue Sync Box:
 **defaultOnMode** (optional): The mode that is used when switching the Sync Box on via HomeKit. Defaults to `video`. Possible values are `video`, `music` or `game`.
 
 **defaultOffMode** (optional): The mode that is used when switching the Sync Box off via HomeKit. Defaults to `passthrough`. Possible values are `powersave` or `passthrough`.
+
+**tvAccessory** (optional): Enables a TV Accessory for switching the inputs of the Sync Box. Defaults to `false`.
 
 **isApiEnabled** (optional): Enables an HTTP API for controlling the Sync Box. Defaults to `false`. See **API** for more information.
 
