@@ -11,6 +11,9 @@ function SyncBoxDevice(platform, state) {
     // Sets the platform
     device.platform = platform;
 
+    // Stores the latest state
+    device.state = state;
+
     // Gets all accessories from the platform
     let unusedDeviceAccessories = platform.accessories.slice();
     let newDeviceAccessories = [];
@@ -85,10 +88,25 @@ function SyncBoxDevice(platform, state) {
     lightBulbService.getCharacteristic(Characteristic.On).on('set', function (value, callback) {
 
         // Saves the changes
-        platform.log.debug('Switch state to ' + (value ? 'ON' : 'OFF'));
-        platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': value ? platform.config.defaultOnMode : platform.config.defaultOffMode }); }).then(function() {}, function() {
-            platform.log('Failed to switch state to ' + (value ? 'ON' : 'OFF'));
-        });
+        if (value) {
+            platform.log.debug('Switch state to ON');
+            let onMode = platform.config.defaultOnMode;
+            if (onMode === 'lastSyncMode') {
+                if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                    onMode = device.state.execution.lastSyncMode;
+                } else {
+                    onMode = 'video';
+                }
+            }
+            platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': onMode }); }).then(function() {}, function() {
+                platform.log('Failed to switch state to ON');
+            });
+        } else {
+            platform.log.debug('Switch state to OFF');
+            platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function() {}, function() {
+                platform.log('Failed to switch state to OFF');
+            });
+        }
 
         // Performs the callback
         callback(null);
@@ -141,13 +159,25 @@ function SyncBoxDevice(platform, state) {
         tvService.getCharacteristic(Characteristic.Active).on('set', (value, callback) => {
 
             // Saves the changes
-            platform.log.debug('Switch state to ' + (value ? 'ON' : 'OFF'));
-            platform.limiter.schedule(function () {
-                return platform.client.updateExecution({'mode': value ? platform.config.defaultOnMode : 'powersave'});
-            }).then(function () {
-            }, function () {
-                platform.log('Failed to switch state to ' + (value ? 'ON' : 'OFF'));
-            });
+            if (value) {
+                platform.log.debug('Switch state to ON');
+                let onMode = platform.config.defaultOnMode;
+                if (onMode === 'lastSyncMode') {
+                    if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                        onMode = device.state.execution.lastSyncMode;
+                    } else {
+                        onMode = 'video';
+                    }
+                }
+                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': onMode }); }).then(function() {}, function() {
+                    platform.log('Failed to switch state to ON');
+                });
+            } else {
+                platform.log.debug('Switch state to OFF');
+                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function() {}, function() {
+                    platform.log('Failed to switch state to OFF');
+                });
+            }
 
             // Performs the callback
             callback(null);
@@ -191,6 +221,9 @@ function SyncBoxDevice(platform, state) {
 SyncBoxDevice.prototype.update = function (state) {
     const device = this;
     const { Characteristic } = device.platform;
+
+    // Stores the latest state
+    device.state = state;
 
     // Updates the corresponding service
     if (device.lightBulbService) {

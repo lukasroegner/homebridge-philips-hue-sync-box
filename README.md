@@ -51,7 +51,7 @@ You have to create new credentials to communicate with the Philips Hue Sync Box:
 
 **syncBoxApiAccessToken**: The access token that you get while registration.
 
-**defaultOnMode** (optional): The mode that is used when switching the Sync Box on via HomeKit. Defaults to `video`. Possible values are `video`, `music` or `game`.
+**defaultOnMode** (optional): The mode that is used when switching the Sync Box on via HomeKit. Defaults to `video`. Possible values are `video`, `music`, `game` or `lastSyncMode`.
 
 **defaultOffMode** (optional): The mode that is used when switching the Sync Box off via HomeKit. Defaults to `passthrough`. Possible values are `powersave` or `passthrough`.
 
