@@ -128,26 +128,33 @@ function SyncBoxDevice(platform, state) {
         let tvService = tvAccessory.getServiceByUUIDAndSubType(Service.Television);
         if (!tvService) {
             tvService = tvAccessory.addService(Service.Television);
+
+            // Sets the TV name
+            tvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
         }
 
         // Register HDMI sources
+        const hdmiInputServices = [];
         for (let i = 1; i <= 4; i++) {
             let hdmiInputService = tvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'HDMI ' + i);
             if (!hdmiInputService) {
                 hdmiInputService = tvAccessory.addService(Service.InputSource, 'hdmi' + i, 'HDMI ' + i);
+
+                // Sets the TV name
+                hdmiInputService
+                    .setCharacteristic(Characteristic.ConfiguredName, 'HDMI ' + i)
+                    .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+                    .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN)
+                    .setCharacteristic(Characteristic.TargetVisibilityState, Characteristic.TargetVisibilityState.SHOWN);
             }
             hdmiInputService
                 .setCharacteristic(Characteristic.Identifier, i)
-                .setCharacteristic(Characteristic.ConfiguredName, 'HDMI ' + i)
-                .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
                 .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
 
             // Adds the input as a linked service, which is important so that the input is properly displayed in the Home app
             tvService.addLinkedService(hdmiInputService);
+            hdmiInputServices.push(hdmiInputService);
         }
-
-        // Sets the TV name
-        tvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
 
         // Sets sleep discovery characteristic (which is always discoverable as Homebrige is always running)
         tvService.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
@@ -193,6 +200,20 @@ function SyncBoxDevice(platform, state) {
             // Performs the callback
             callback(null);
         });
+
+        // Handles showing/hiding of sources
+        for (let i = 0; i < hdmiInputServices.length; i++) {
+            hdmiInputServices[i].getCharacteristic(Characteristic.TargetVisibilityState).on('set', function (value, callback) {
+                if (value === Characteristic.TargetVisibilityState.SHOWN) {
+                    hdmiInputServices[i].setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
+                } else {
+                    hdmiInputServices[i].setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.HIDDEN);
+                }
+
+                // Performs the callback
+                callback(null);
+            });
+        }
 
         // Stores the tv service
         device.tvService = tvService;
