@@ -38,7 +38,7 @@ You have to create new credentials to communicate with the Philips Hue Sync Box:
             "syncBoxApiAccessToken": "<ACCESS-TOKEN>",
             "defaultOnMode": "video",
             "defaultOffMode": "passthrough",
-            "tvAccessory": true,
+            "tvAccessory": false,
             "isApiEnabled": false,
             "apiPort": 40220,
             "apiToken": "<YOUR-TOKEN>"

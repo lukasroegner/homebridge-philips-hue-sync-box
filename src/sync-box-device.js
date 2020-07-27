@@ -31,13 +31,10 @@ function SyncBoxDevice(platform, state) {
     }
     deviceAccessories.push(lightBulbAccessory);
 
-
     // Gets the tv accessory
     let tvAccessory;
     if(platform.config.tvAccessory) {
-        tvAccessory = unusedDeviceAccessories.find(function (a) {
-            return a.context.kind === 'TVAccessory';
-        });
+        tvAccessory = unusedDeviceAccessories.find(function (a) { return a.context.kind === 'TVAccessory'; });
         if (tvAccessory) {
             unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(tvAccessory), 1);
         } else {
@@ -48,7 +45,6 @@ function SyncBoxDevice(platform, state) {
         }
         deviceAccessories.push(tvAccessory);
     }
-
 
     // Registers the newly created accessories
     platform.api.registerPlatformAccessories(platform.pluginName, platform.platformName, newDeviceAccessories);
@@ -125,38 +121,39 @@ function SyncBoxDevice(platform, state) {
         callback(null);
     });
 
-
+    // Handles the TV accessory if it is enabled
     if(tvAccessory) {
-        // Updates tv  service
+
+        // Updates tv service
         let tvService = tvAccessory.getServiceByUUIDAndSubType(Service.Television);
         if (!tvService) {
             tvService = tvAccessory.addService(Service.Television);
-
-            // Register HDMI sources
-
-            for (let i = 1; i <= 4; i++) {
-
-                const hdmiInputService = tvAccessory.addService(Service.InputSource, 'hdmi' + i, 'HDMI ' + i);
-                hdmiInputService
-                    .setCharacteristic(Characteristic.Identifier, i)
-                    .setCharacteristic(Characteristic.ConfiguredName, 'HDMI ' + i)
-                    .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-                    .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
-                tvService.addLinkedService(hdmiInputService); // link to tv service
-
-            }
-
         }
 
-        // set the tv name
+        // Register HDMI sources
+        for (let i = 1; i <= 4; i++) {
+            let hdmiInputService = tvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'HDMI ' + i);
+            if (!hdmiInputService) {
+                hdmiInputService = tvAccessory.addService(Service.InputSource, 'hdmi' + i, 'HDMI ' + i);
+            }
+            hdmiInputService
+                .setCharacteristic(Characteristic.Identifier, i)
+                .setCharacteristic(Characteristic.ConfiguredName, 'HDMI ' + i)
+                .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+                .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
+
+            // Adds the input as a linked service, which is important so that the input is properly displayed in the Home app
+            tvService.addLinkedService(hdmiInputService);
+        }
+
+        // Sets the TV name
         tvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
 
-        // set sleep discovery characteristic
+        // Sets sleep discovery characteristic (which is always discoverable as Homebrige is always running)
         tvService.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
 
-
-        // handle on / off events using the Active characteristic
-        tvService.getCharacteristic(Characteristic.Active).on('set', (value, callback) => {
+        // Handles on/off events
+        tvService.getCharacteristic(Characteristic.Active).on('set', function (value, callback) {
 
             // Saves the changes
             if (value) {
@@ -184,31 +181,22 @@ function SyncBoxDevice(platform, state) {
 
         });
 
-        // handle input source changes
-        tvService.getCharacteristic(Characteristic.ActiveIdentifier).on('set', (value, callback) => {
+        // Handles input source changes
+        tvService.getCharacteristic(Characteristic.ActiveIdentifier).on('set', function (value, callback) {
 
             // Saves the changes
             platform.log.debug('Switch hdmi source to input' + value);
-            platform.limiter.schedule(function () {
-                return platform.client.updateExecution({'hdmiSource': 'input' + value});
-            }).then(function () {
-            }, function () {
+            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input' + value}); }).then(function () {}, function () {
                 platform.log('Failed to switch hdmi source to input' + value);
             });
 
-            tvService.updateCharacteristic(Characteristic.ActiveIdentifier, value);
-
             // Performs the callback
             callback(null);
-
-
         });
-
 
         // Stores the tv service
         device.tvService = tvService;
     }
-
 
     // Updates the state initially
     device.update(state);
@@ -235,22 +223,19 @@ SyncBoxDevice.prototype.update = function (state) {
         // Updates the brightness characteristic
         device.platform.log.debug('Updated brightness to ' + state.execution.brightness);
         device.lightBulbService.updateCharacteristic(Characteristic.Brightness, Math.round((state.execution.brightness / 200.0) * 100));
-
-
     }
 
+    // Updates the corresponding service of the TV accessory
     if (device.tvService) {
 
         // Updates the on characteristic
         device.platform.log.debug('Updated state to ' + state.execution.mode);
-        device.tvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave');
+        device.tvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave' && state.execution.mode !== 'passthrough');
 
         // Updates the HDMI input characteristic
         device.platform.log.debug('Updated HDMI input to ' + state.execution.hdmiSource);
         device.tvService.updateCharacteristic(Characteristic.ActiveIdentifier, parseInt(state.execution.hdmiSource.replace('input', '')));
-
     }
-
 }
 
 /**
