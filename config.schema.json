@@ -1,0 +1,79 @@
+{
+    "pluginAlias": "PhilipsHueSyncBoxPlatform",
+    "pluginType": "platform",
+    "headerDisplay": "Homebridge plugin for the Philips Hue Sync Box.",
+    "footerDisplay": "For help please visit the [GitHub repository](https://github.com/lukasroegner/homebridge-philips-hue-sync-box).",
+    "schema": {
+        "type": "object",
+        "properties": {
+            "syncBoxIpAddress": {
+                "title": "IP Address",
+                "type": "string",
+                "required": true,
+                "placeholder": "XXX.XXX.XXX.XXX",
+                "description": "The IP address of your Philips Hue Sync Box."
+            },
+            "syncBoxApiAccessToken": {
+                "title": "Access Token",
+                "type": "string",
+                "required": true,
+                "description": "The access token that you get while registration."
+            },
+            "defaultOnMode": {
+                "title": "Default ON mode",
+                "type": "string",
+                "required": false,
+                "placeholder": "video",
+                "description": "The mode that is used when switching the Sync Box on via HomeKit. Possible values are 'video', 'music', 'game' or 'lastSyncMode'."
+            },
+            "defaultOffMode": {
+                "title": "Default OFF mode",
+                "type": "string",
+                "required": false,
+                "placeholder": "passthrough",
+                "description": "The mode that is used when switching the Sync Box off via HomeKit. Possible values are 'powersave' or 'passthrough'."
+            },
+            "tvAccessory": {
+                "title": "Enable HDMI TV",
+                "type": "boolean",
+                "default": false,
+                "required": false,
+                "description": "Enables a TV Accessory for switching the inputs of the Sync Box."
+            },
+            "modeTvAccessory": {
+                "title": "Enable Mode TV",
+                "type": "boolean",
+                "default": false,
+                "required": false,
+                "description": "Enables a TV Accessory for switching the modes of the Sync Box."
+            },
+            "intensityTvAccessory": {
+                "title": "Enable Intensity TV",
+                "type": "boolean",
+                "default": false,
+                "required": false,
+                "description": "Enables a TV Accessory for switching the intensity of the Sync Box."
+            },
+            "isApiEnabled": {
+                "title": "Enable API",
+                "type": "boolean",
+                "default": false,
+                "required": false,
+                "description": "Enables an HTTP API for controlling the Sync Box."
+            },
+            "apiPort": {
+                "title": "API Port",
+                "type": "integer",
+                "placeholder": "40220",
+                "required": false,
+                "description": "The port that the API (if enabled) runs on"
+            },
+            "apiToken": {
+                "title": "API Token",
+                "type": "string",
+                "required": false,
+                "description": " The token that has to be included in each request of the API. Is required if the API is enabled and has no default value."
+            }
+        }
+    }
+}

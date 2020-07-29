@@ -5,7 +5,11 @@ Homebridge plugin for the Philips Hue Sync Box.
 The Sync Box is exposed as a lightbulb. The following features are currently supported:
 * On/Off
 * Brightness
+
+You can also enable additional TV accessories that support:
 * Switching HDMI inputs
+* Switching modes
+* Switching intensity
 
 ## Installation
 
