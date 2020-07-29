@@ -40,6 +40,7 @@ You have to create new credentials to communicate with the Philips Hue Sync Box:
             "defaultOffMode": "passthrough",
             "tvAccessory": false,
             "modeTvAccessory": false,
+            "intensityTvAccessory": false,
             "isApiEnabled": false,
             "apiPort": 40220,
             "apiToken": "<YOUR-TOKEN>"
@@ -59,6 +60,8 @@ You have to create new credentials to communicate with the Philips Hue Sync Box:
 **tvAccessory** (optional): Enables a TV Accessory for switching the inputs of the Sync Box. Defaults to `false`.
 
 **modeTvAccessory** (optional): Enables a TV Accessory for switching the modes (`video`, `music`, `game`) of the Sync Box. Defaults to `false`.
+
+**intensityTvAccessory** (optional): Enables a TV Accessory for switching the intensity (`subtle`, `moderate`, `high`, `intense`) of the Sync Box. Defaults to `false`.
 
 **isApiEnabled** (optional): Enables an HTTP API for controlling the Sync Box. Defaults to `false`. See **API** for more information.
 

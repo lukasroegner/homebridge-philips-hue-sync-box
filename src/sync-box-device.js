@@ -61,6 +61,21 @@ function SyncBoxDevice(platform, state) {
         deviceAccessories.push(modeTvAccessory);
     }
 
+    // Gets the tv accessory
+    let intensityTvAccessory;
+    if(platform.config.intensityTvAccessory) {
+        intensityTvAccessory = unusedDeviceAccessories.find(function (a) { return a.context.kind === 'IntensityTVAccessory'; });
+        if (intensityTvAccessory) {
+            unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(intensityTvAccessory), 1);
+        } else {
+            platform.log('Adding new accessory with kind IntensityTVAccessory.');
+            intensityTvAccessory = new Accessory(state.device.name, UUIDGen.generate('IntensityTVAccessory'));
+            intensityTvAccessory.context.kind = 'IntensityTVAccessory';
+            newDeviceAccessories.push(intensityTvAccessory);
+        }
+        deviceAccessories.push(intensityTvAccessory);
+    }
+
     // Registers the newly created accessories
     platform.api.registerPlatformAccessories(platform.pluginName, platform.platformName, newDeviceAccessories);
 
@@ -332,6 +347,112 @@ function SyncBoxDevice(platform, state) {
         device.modeTvService = modeTvService;
     }
 
+    // Handles the intensity TV accessory if it is enabled
+    if(intensityTvAccessory) {
+
+        // Updates tv service
+        let intensityTvService = intensityTvAccessory.getServiceByUUIDAndSubType(Service.Television, 'IntensityTVAccessory');
+        if (!intensityTvService) {
+            intensityTvService = intensityTvAccessory.addService(Service.Television, 'Intensity', 'IntensityTVAccessory');
+
+            // Sets the TV name
+            intensityTvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
+        }
+
+        // Register intensity input sources
+        const intensityInputServices = [];
+        const intensities = ['none', 'Subtle' , 'Moderate', 'High', 'Intense'];
+        for (let i = 1; i <= 4; i++) {
+            let intensityInputService = intensityTvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'INTENSITY ' + i);
+            if (!intensityInputService) {
+                intensityInputService = intensityTvAccessory.addService(Service.InputSource, 'intensity' + i, 'INTENSITY ' + i);
+
+                // Sets the TV name
+                intensityInputService
+                    .setCharacteristic(Characteristic.ConfiguredName, intensities[i])
+                    .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+                    .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN)
+                    .setCharacteristic(Characteristic.TargetVisibilityState, Characteristic.TargetVisibilityState.SHOWN);
+            }
+            intensityInputService
+                .setCharacteristic(Characteristic.Identifier, i)
+                .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
+
+            // Adds the input as a linked service, which is important so that the input is properly displayed in the Home app
+            intensityTvService.addLinkedService(intensityInputService);
+            intensityInputServices.push(intensityInputService);
+        }
+
+        // Sets sleep discovery characteristic (which is always discoverable as Homebrige is always running)
+        intensityTvService.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+
+        // Handles on/off events
+        intensityTvService.getCharacteristic(Characteristic.Active).on('set', function (value, callback) {
+
+            // Saves the changes
+            if (value) {
+                platform.log.debug('Switch state to ON');
+                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function() {}, function() {
+                    platform.log('Failed to switch state to ON');
+                });
+            } else {
+                platform.log.debug('Switch state to OFF');
+                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'powersave' }); }).then(function() {}, function() {
+                    platform.log('Failed to switch state to OFF');
+                });
+            }
+
+            // Performs the callback
+            callback(null);
+
+        });
+
+        // Handles input source changes
+        intensityTvService.getCharacteristic(Characteristic.ActiveIdentifier).on('set', function (value, callback) {
+
+            // Saves the changes
+            let intensity = '';
+            switch (value) {
+                case 1:
+                    intensity = 'subtle';
+                    break;
+                case 2:
+                    intensity = 'moderate';
+                    break;
+                case 3:
+                    intensity = 'high';
+                    break;
+                case 4:
+                    intensity = 'intense';
+                    break;
+            }
+            platform.log.debug('Switch intensity to ' + intensity);
+            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': intensity }); }).then(function () {}, function () {
+                platform.log('Failed to switch intensity to ' + intensity);
+            });
+
+            // Performs the callback
+            callback(null);
+        });
+
+        // Handles showing/hiding of sources
+        for (let i = 0; i < intensityInputServices.length; i++) {
+            intensityInputServices[i].getCharacteristic(Characteristic.TargetVisibilityState).on('set', function (value, callback) {
+                if (value === Characteristic.TargetVisibilityState.SHOWN) {
+                    intensityInputServices[i].setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
+                } else {
+                    intensityInputServices[i].setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.HIDDEN);
+                }
+
+                // Performs the callback
+                callback(null);
+            });
+        }
+
+        // Stores the tv service
+        device.intensityTvService = intensityTvService;
+    }
+
     // Updates the state initially
     device.update(state);
 }
@@ -378,7 +499,7 @@ SyncBoxDevice.prototype.update = function (state) {
         device.platform.log.debug('Updated state to ' + state.execution.mode);
         device.modeTvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave');
 
-        // Updates the HDMI input characteristic
+        // Updates the mode input characteristic
         device.platform.log.debug('Updated mode to ' + state.execution.mode);
         switch (state.execution.mode) {
             case 'video':
@@ -392,6 +513,39 @@ SyncBoxDevice.prototype.update = function (state) {
                 break;
             case 'passthrough':
                 device.modeTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 4);
+                break;
+        }
+    }
+
+    // Updates the corresponding service of the intensity TV accessory
+    if (device.intensityTvService) {
+
+        // Updates the on characteristic
+        device.platform.log.debug('Updated state to ' + state.execution.mode);
+        device.intensityTvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave');
+
+        // Gets the current mode or the last sync mode to set the intensity
+        let mode = 'video';
+        if (state.execution.mode !== 'powersave' && state.execution.mode !== 'passthrough') {
+            mode = state.execution.mode;
+        } else if (state.execution.lastSyncMode) {
+            mode = state.execution.lastSyncMode;
+        }
+        
+        // Updates the intensity input characteristic
+        device.platform.log.debug('Updated intensity to ' + state.execution[mode].intensity);
+        switch (state.execution[mode].intensity) {
+            case 'subtle':
+                device.intensityTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 1);
+                break;
+            case 'moderate':
+                device.intensityTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 2);
+                break;
+            case 'high':
+                device.intensityTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 3);
+                break;
+            case 'intense':
+                device.intensityTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 4);
                 break;
         }
     }
