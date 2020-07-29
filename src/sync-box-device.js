@@ -46,6 +46,21 @@ function SyncBoxDevice(platform, state) {
         deviceAccessories.push(tvAccessory);
     }
 
+    // Gets the tv accessory
+    let modeTvAccessory;
+    if(platform.config.modeTvAccessory) {
+        modeTvAccessory = unusedDeviceAccessories.find(function (a) { return a.context.kind === 'ModeTVAccessory'; });
+        if (modeTvAccessory) {
+            unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(modeTvAccessory), 1);
+        } else {
+            platform.log('Adding new accessory with kind ModeTVAccessory.');
+            modeTvAccessory = new Accessory(state.device.name, UUIDGen.generate('ModeTVAccessory'));
+            modeTvAccessory.context.kind = 'ModeTVAccessory';
+            newDeviceAccessories.push(modeTvAccessory);
+        }
+        deviceAccessories.push(modeTvAccessory);
+    }
+
     // Registers the newly created accessories
     platform.api.registerPlatformAccessories(platform.pluginName, platform.platformName, newDeviceAccessories);
 
@@ -211,6 +226,112 @@ function SyncBoxDevice(platform, state) {
         device.tvService = tvService;
     }
 
+    // Handles the mode TV accessory if it is enabled
+    if(modeTvAccessory) {
+
+        // Updates tv service
+        let modeTvService = modeTvAccessory.getServiceByUUIDAndSubType(Service.Television, 'ModeTVAccessory');
+        if (!modeTvService) {
+            modeTvService = modeTvAccessory.addService(Service.Television, 'Mode', 'ModeTVAccessory');
+
+            // Sets the TV name
+            modeTvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
+        }
+
+        // Register mode input sources
+        const modeInputServices = [];
+        const modes = ['none', 'Video', 'Music', 'Game', 'Passthrough'];
+        for (let i = 1; i <= 4; i++) {
+            let modeInputService = modeTvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'MODE ' + i);
+            if (!modeInputService) {
+                modeInputService = modeTvAccessory.addService(Service.InputSource, 'mode' + i, 'MODE ' + i);
+
+                // Sets the TV name
+                modeInputService
+                    .setCharacteristic(Characteristic.ConfiguredName, modes[i])
+                    .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+                    .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN)
+                    .setCharacteristic(Characteristic.TargetVisibilityState, Characteristic.TargetVisibilityState.SHOWN);
+            }
+            modeInputService
+                .setCharacteristic(Characteristic.Identifier, i)
+                .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
+
+            // Adds the input as a linked service, which is important so that the input is properly displayed in the Home app
+            modeTvService.addLinkedService(modeInputService);
+            modeInputServices.push(modeInputService);
+        }
+
+        // Sets sleep discovery characteristic (which is always discoverable as Homebrige is always running)
+        modeTvService.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+
+        // Handles on/off events
+        modeTvService.getCharacteristic(Characteristic.Active).on('set', function (value, callback) {
+
+            // Saves the changes
+            if (value) {
+                platform.log.debug('Switch state to ON');
+                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function() {}, function() {
+                    platform.log('Failed to switch state to ON');
+                });
+            } else {
+                platform.log.debug('Switch state to OFF');
+                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'powersave' }); }).then(function() {}, function() {
+                    platform.log('Failed to switch state to OFF');
+                });
+            }
+
+            // Performs the callback
+            callback(null);
+
+        });
+
+        // Handles input source changes
+        modeTvService.getCharacteristic(Characteristic.ActiveIdentifier).on('set', function (value, callback) {
+
+            // Saves the changes
+            let mode = '';
+            switch (value) {
+                case 1:
+                    mode = 'video';
+                    break;
+                case 2:
+                    mode = 'music';
+                    break;
+                case 3:
+                    mode = 'game';
+                    break;
+                case 4:
+                    mode = 'passthrough';
+                    break;
+            }
+            platform.log.debug('Switch mode to ' + mode);
+            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': mode }); }).then(function () {}, function () {
+                platform.log('Failed to switch mode to ' + mode);
+            });
+
+            // Performs the callback
+            callback(null);
+        });
+
+        // Handles showing/hiding of sources
+        for (let i = 0; i < modeInputServices.length; i++) {
+            modeInputServices[i].getCharacteristic(Characteristic.TargetVisibilityState).on('set', function (value, callback) {
+                if (value === Characteristic.TargetVisibilityState.SHOWN) {
+                    modeInputServices[i].setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
+                } else {
+                    modeInputServices[i].setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.HIDDEN);
+                }
+
+                // Performs the callback
+                callback(null);
+            });
+        }
+
+        // Stores the tv service
+        device.modeTvService = modeTvService;
+    }
+
     // Updates the state initially
     device.update(state);
 }
@@ -248,6 +369,31 @@ SyncBoxDevice.prototype.update = function (state) {
         // Updates the HDMI input characteristic
         device.platform.log.debug('Updated HDMI input to ' + state.execution.hdmiSource);
         device.tvService.updateCharacteristic(Characteristic.ActiveIdentifier, parseInt(state.execution.hdmiSource.replace('input', '')));
+    }
+
+    // Updates the corresponding service of the mode TV accessory
+    if (device.modeTvService) {
+
+        // Updates the on characteristic
+        device.platform.log.debug('Updated state to ' + state.execution.mode);
+        device.modeTvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave');
+
+        // Updates the HDMI input characteristic
+        device.platform.log.debug('Updated mode to ' + state.execution.mode);
+        switch (state.execution.mode) {
+            case 'video':
+                device.modeTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 1);
+                break;
+            case 'music':
+                device.modeTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 2);
+                break;
+            case 'game':
+                device.modeTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 3);
+                break;
+            case 'passthrough':
+                device.modeTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 4);
+                break;
+        }
     }
 }
 
