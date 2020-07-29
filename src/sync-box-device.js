@@ -165,20 +165,12 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                let onMode = platform.config.defaultOnMode;
-                if (onMode === 'lastSyncMode') {
-                    if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
-                        onMode = device.state.execution.lastSyncMode;
-                    } else {
-                        onMode = 'video';
-                    }
-                }
-                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': onMode }); }).then(function() {}, function() {
+                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function() {}, function() {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function() {}, function() {
+                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'powersave' }); }).then(function() {}, function() {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -251,7 +243,7 @@ SyncBoxDevice.prototype.update = function (state) {
 
         // Updates the on characteristic
         device.platform.log.debug('Updated state to ' + state.execution.mode);
-        device.tvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave' && state.execution.mode !== 'passthrough');
+        device.tvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave');
 
         // Updates the HDMI input characteristic
         device.platform.log.debug('Updated HDMI input to ' + state.execution.hdmiSource);
