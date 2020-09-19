@@ -11,6 +11,8 @@ You can also enable additional TV accessories that support:
 * Switching modes
 * Switching intensity
 
+**Important**: TV accessories must be added to HomeKit manually, the logs show the pin for adding them.
+
 ## Installation
 
 Install the plugin via npm:

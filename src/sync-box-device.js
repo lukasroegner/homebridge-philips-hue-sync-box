@@ -6,7 +6,7 @@
  */
 function SyncBoxDevice(platform, state) {
     const device = this;
-    const { UUIDGen, Accessory, Characteristic, Service } = platform;
+    const { UUIDGen, Accessory, Characteristic, Service, Categories } = platform;
 
     // Sets the platform
     device.platform = platform;
@@ -15,6 +15,7 @@ function SyncBoxDevice(platform, state) {
     device.state = state;
 
     // Gets all accessories from the platform
+    let externalAccessories = [];
     let unusedDeviceAccessories = platform.accessories.slice();
     let newDeviceAccessories = [];
     let deviceAccessories = [];
@@ -34,50 +35,43 @@ function SyncBoxDevice(platform, state) {
     // Gets the tv accessory
     let tvAccessory;
     if(platform.config.tvAccessory) {
-        tvAccessory = unusedDeviceAccessories.find(function (a) { return a.context.kind === 'TVAccessory'; });
-        if (tvAccessory) {
-            unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(tvAccessory), 1);
-        } else {
-            platform.log('Adding new accessory with kind TVAccessory.');
-            tvAccessory = new Accessory(state.device.name, UUIDGen.generate('TVAccessory'));
-            tvAccessory.context.kind = 'TVAccessory';
-            newDeviceAccessories.push(tvAccessory);
-        }
+        platform.log('Setting up accessory with kind TVAccessory.');
+        tvAccessory = new Accessory(state.device.name, UUIDGen.generate('TVAccessory'));
+        tvAccessory.category = Categories.TELEVISION;
+        tvAccessory.context.kind = 'TVAccessory';
+        externalAccessories.push(tvAccessory);
         deviceAccessories.push(tvAccessory);
     }
 
     // Gets the tv accessory
     let modeTvAccessory;
     if(platform.config.modeTvAccessory) {
-        modeTvAccessory = unusedDeviceAccessories.find(function (a) { return a.context.kind === 'ModeTVAccessory'; });
-        if (modeTvAccessory) {
-            unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(modeTvAccessory), 1);
-        } else {
-            platform.log('Adding new accessory with kind ModeTVAccessory.');
-            modeTvAccessory = new Accessory(state.device.name, UUIDGen.generate('ModeTVAccessory'));
-            modeTvAccessory.context.kind = 'ModeTVAccessory';
-            newDeviceAccessories.push(modeTvAccessory);
-        }
+        platform.log('Setting up accessory with kind ModeTVAccessory.');
+        modeTvAccessory = new Accessory(state.device.name, UUIDGen.generate('ModeTVAccessory'));
+        modeTvAccessory.category = Categories.TELEVISION;
+        modeTvAccessory.context.kind = 'ModeTVAccessory';
+        externalAccessories.push(modeTvAccessory);
         deviceAccessories.push(modeTvAccessory);
     }
 
     // Gets the tv accessory
     let intensityTvAccessory;
     if(platform.config.intensityTvAccessory) {
-        intensityTvAccessory = unusedDeviceAccessories.find(function (a) { return a.context.kind === 'IntensityTVAccessory'; });
-        if (intensityTvAccessory) {
-            unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(intensityTvAccessory), 1);
-        } else {
-            platform.log('Adding new accessory with kind IntensityTVAccessory.');
-            intensityTvAccessory = new Accessory(state.device.name, UUIDGen.generate('IntensityTVAccessory'));
-            intensityTvAccessory.context.kind = 'IntensityTVAccessory';
-            newDeviceAccessories.push(intensityTvAccessory);
-        }
+        platform.log('Adding new accessory with kind IntensityTVAccessory.');
+        intensityTvAccessory = new Accessory(state.device.name, UUIDGen.generate('IntensityTVAccessory'));
+        intensityTvAccessory.category = Categories.TELEVISION;
+        intensityTvAccessory.context.kind = 'IntensityTVAccessory';
+        externalAccessories.push(intensityTvAccessory);
         deviceAccessories.push(intensityTvAccessory);
     }
 
     // Registers the newly created accessories
     platform.api.registerPlatformAccessories(platform.pluginName, platform.platformName, newDeviceAccessories);
+
+    // Publishes the external accessories (i.e. the TV accessories)
+    if (externalAccessories.length > 0) {
+        platform.api.publishExternalAccessories(platform.pluginName, externalAccessories);
+    }
 
     // Removes all unused accessories
     for (let i = 0; i < unusedDeviceAccessories.length; i++) {
