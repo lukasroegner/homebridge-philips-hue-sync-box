@@ -37,7 +37,7 @@ function SyncBoxDevice(platform, state) {
     if(platform.config.tvAccessory) {
         platform.log('Setting up accessory with kind TVAccessory.');
         tvAccessory = new Accessory(state.device.name, UUIDGen.generate('TVAccessory'));
-        tvAccessory.category = Categories.TELEVISION;
+        tvAccessory.category = Categories.TV_SET_TOP_BOX;
         tvAccessory.context.kind = 'TVAccessory';
         externalAccessories.push(tvAccessory);
         deviceAccessories.push(tvAccessory);
@@ -48,7 +48,7 @@ function SyncBoxDevice(platform, state) {
     if(platform.config.modeTvAccessory) {
         platform.log('Setting up accessory with kind ModeTVAccessory.');
         modeTvAccessory = new Accessory(state.device.name, UUIDGen.generate('ModeTVAccessory'));
-        modeTvAccessory.category = Categories.TELEVISION;
+        modeTvAccessory.category = Categories.TV_SET_TOP_BOX;
         modeTvAccessory.context.kind = 'ModeTVAccessory';
         externalAccessories.push(modeTvAccessory);
         deviceAccessories.push(modeTvAccessory);
@@ -59,7 +59,7 @@ function SyncBoxDevice(platform, state) {
     if(platform.config.intensityTvAccessory) {
         platform.log('Adding new accessory with kind IntensityTVAccessory.');
         intensityTvAccessory = new Accessory(state.device.name, UUIDGen.generate('IntensityTVAccessory'));
-        intensityTvAccessory.category = Categories.TELEVISION;
+        intensityTvAccessory.category = Categories.TV_SET_TOP_BOX;
         intensityTvAccessory.context.kind = 'IntensityTVAccessory';
         externalAccessories.push(intensityTvAccessory);
         deviceAccessories.push(intensityTvAccessory);
