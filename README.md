@@ -45,8 +45,11 @@ You have to create new credentials to communicate with the Philips Hue Sync Box:
             "defaultOnMode": "video",
             "defaultOffMode": "passthrough",
             "tvAccessory": false,
+            "tvAccessoryType": "tv",
             "modeTvAccessory": false,
+            "modeTvAccessoryType": "tv",
             "intensityTvAccessory": false,
+            "intensityTvAccessoryType": "tv",
             "isApiEnabled": false,
             "apiPort": 40220,
             "apiToken": "<YOUR-TOKEN>"
@@ -65,9 +68,15 @@ You have to create new credentials to communicate with the Philips Hue Sync Box:
 
 **tvAccessory** (optional): Enables a TV Accessory for switching the inputs of the Sync Box. Defaults to `false`.
 
+**tvAccessoryType** (optional): Type of icon that the Apple Home app should show. Possible values are `tv`, `settopbox`, `tvstick` or `audioreceiver`. Defaults to `tv`.
+
 **modeTvAccessory** (optional): Enables a TV Accessory for switching the modes (`video`, `music`, `game`) of the Sync Box. Defaults to `false`.
 
+**modeTvAccessoryType** (optional): Type of icon that the Apple Home app should show. Possible values are `tv`, `settopbox`, `tvstick` or `audioreceiver`. Defaults to `tv`.
+
 **intensityTvAccessory** (optional): Enables a TV Accessory for switching the intensity (`subtle`, `moderate`, `high`, `intense`) of the Sync Box. Defaults to `false`.
+
+**intensityTvAccessoryType** (optional): Type of icon that the Apple Home app should show. Possible values are `tv`, `settopbox`, `tvstick` or `audioreceiver`. Defaults to `tv`.
 
 **isApiEnabled** (optional): Enables an HTTP API for controlling the Sync Box. Defaults to `false`. See **API** for more information.
 

@@ -40,6 +40,17 @@
                 "required": false,
                 "description": "Enables a TV Accessory for switching the inputs of the Sync Box."
             },
+            "tvAccessoryType": {
+                "title": "HDMI TV HomeKit Type",
+                "type": "string",
+                "default": "TV",
+                "oneOf": [
+                    { "title": "TV", "enum": ["tv"] },
+                    { "title": "Set Top Box", "enum": ["settopbox"] },
+                    { "title": "TV Stick", "enum": ["tvstick"] },
+                    { "title": "Audio Receiver", "enum": ["audioreceiver"] }
+                ]
+            },
             "modeTvAccessory": {
                 "title": "Enable Mode TV",
                 "type": "boolean",
@@ -47,12 +58,34 @@
                 "required": false,
                 "description": "Enables a TV Accessory for switching the modes of the Sync Box."
             },
+            "modeTvAccessoryType": {
+                "title": "Mode TV HomeKit Type",
+                "type": "string",
+                "default": "TV",
+                "oneOf": [
+                    { "title": "TV", "enum": ["tv"] },
+                    { "title": "Set Top Box", "enum": ["settopbox"] },
+                    { "title": "TV Stick", "enum": ["tvstick"] },
+                    { "title": "Audio Receiver", "enum": ["audioreceiver"] }
+                ]
+            },
             "intensityTvAccessory": {
                 "title": "Enable Intensity TV",
                 "type": "boolean",
                 "default": false,
                 "required": false,
                 "description": "Enables a TV Accessory for switching the intensity of the Sync Box."
+            },
+            "intensityTvAccessoryType": {
+                "title": "Intensity TV HomeKit Type",
+                "type": "string",
+                "default": "TV",
+                "oneOf": [
+                    { "title": "TV", "enum": ["tv"] },
+                    { "title": "Set Top Box", "enum": ["settopbox"] },
+                    { "title": "TV Stick", "enum": ["tvstick"] },
+                    { "title": "Audio Receiver", "enum": ["audioreceiver"] }
+                ]
             },
             "isApiEnabled": {
                 "title": "Enable API",
