@@ -69,7 +69,7 @@ function SyncBoxDevice(platform, state) {
                 modeTvAccessory.category = Categories.TV_STREAMING_STICK;
                 break;
             case 'audioreceiver':
-                tvAccessory.category = Categories.AUDIO_RECEIVER;
+                modeTvAccessory.category = Categories.AUDIO_RECEIVER;
                 break;
             default:
                 modeTvAccessory.category = Categories.TELEVISION;
@@ -93,7 +93,7 @@ function SyncBoxDevice(platform, state) {
                 intensityTvAccessory.category = Categories.TV_STREAMING_STICK;
                 break;
             case 'audioreceiver':
-                tvAccessory.category = Categories.AUDIO_RECEIVER;
+                intensityTvAccessory.category = Categories.AUDIO_RECEIVER;
                 break;
             default:
                 intensityTvAccessory.category = Categories.TELEVISION;
