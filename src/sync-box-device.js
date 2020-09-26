@@ -107,11 +107,6 @@ function SyncBoxDevice(platform, state) {
     // Registers the newly created accessories
     platform.api.registerPlatformAccessories(platform.pluginName, platform.platformName, newDeviceAccessories);
 
-    // Publishes the external accessories (i.e. the TV accessories)
-    if (externalAccessories.length > 0) {
-        platform.api.publishExternalAccessories(platform.pluginName, externalAccessories);
-    }
-
     // Removes all unused accessories
     for (let i = 0; i < unusedDeviceAccessories.length; i++) {
         const unusedDeviceAccessory = unusedDeviceAccessories[i];
@@ -130,8 +125,18 @@ function SyncBoxDevice(platform, state) {
         accessoryInformationService
             .setCharacteristic(Characteristic.Manufacturer, 'Philips')
             .setCharacteristic(Characteristic.Model, 'Sync Box')
-            .setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId)
             .setCharacteristic(Characteristic.FirmwareRevision, state.device.firmwareVersion);
+
+        // Applies a custom serial number as otherwise issues with matching in HomeKit could occur
+        if (deviceAccessory.context.kind == 'TVAccessory') {
+            accessoryInformationService.setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId + '-T');
+        } else if (deviceAccessory.context.kind == 'ModeTVAccessory') {
+            accessoryInformationService.setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId + '-M');
+        } else if (deviceAccessory.context.kind == 'IntensityTVAccessory') {
+            accessoryInformationService.setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId + '-I');
+        } else {
+            accessoryInformationService.setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId);
+        }  
     }
 
     // Updates the light bulb service
@@ -486,6 +491,11 @@ function SyncBoxDevice(platform, state) {
         device.intensityTvService = intensityTvService;
     }
 
+    // Publishes the external accessories (i.e. the TV accessories)
+    if (externalAccessories.length > 0) {
+        platform.api.publishExternalAccessories(platform.pluginName, externalAccessories);
+    }
+    
     // Updates the state initially
     device.update(state);
 }
