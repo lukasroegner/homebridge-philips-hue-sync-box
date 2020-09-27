@@ -198,7 +198,11 @@ function SyncBoxDevice(platform, state) {
             tvService = tvAccessory.addService(Service.Television);
 
             // Sets the TV name
-            tvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
+            tvService.setCharacteristic(Characteristic.ConfiguredName, lightBulbAccessory.context.tvAccessoryConfiguredName || state.device.name);
+            tvService.getCharacteristic(Characteristic.ConfiguredName).on('set', function (value, callback) {
+                lightBulbAccessory.context.tvAccessoryConfiguredName = value;
+                callback(null);
+            });
         }
 
         // Register HDMI sources
@@ -288,7 +292,11 @@ function SyncBoxDevice(platform, state) {
             modeTvService = modeTvAccessory.addService(Service.Television, 'Mode', 'ModeTVAccessory');
 
             // Sets the TV name
-            modeTvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
+            modeTvService.setCharacteristic(Characteristic.ConfiguredName, lightBulbAccessory.context.modeTvAccessoryConfiguredName || state.device.name);
+            modeTvService.getCharacteristic(Characteristic.ConfiguredName).on('set', function (value, callback) {
+                lightBulbAccessory.context.modeTvAccessoryConfiguredName = value;
+                callback(null);
+            });
         }
 
         // Register mode input sources
@@ -394,7 +402,11 @@ function SyncBoxDevice(platform, state) {
             intensityTvService = intensityTvAccessory.addService(Service.Television, 'Intensity', 'IntensityTVAccessory');
 
             // Sets the TV name
-            intensityTvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
+            intensityTvService.setCharacteristic(Characteristic.ConfiguredName, lightBulbAccessory.context.intensityTvAccessoryConfiguredName || state.device.name);
+            intensityTvService.getCharacteristic(Characteristic.ConfiguredName).on('set', function (value, callback) {
+                lightBulbAccessory.context.intensityTvAccessoryConfiguredName = value;
+                callback(null);
+            });
         }
 
         // Register intensity input sources
