@@ -213,8 +213,11 @@ function SyncBoxDevice(platform, state) {
                 hdmiInputService = tvAccessory.addService(Service.InputSource, 'hdmi' + i, 'HDMI ' + i);
 
                 // Sets the TV name
+                const hdmiState = state.hdmi['input' + i];
+                const hdmiName = hdmiState.name || ('HDMI ' + i);
+
                 hdmiInputService
-                    .setCharacteristic(Characteristic.ConfiguredName, 'HDMI ' + i)
+                    .setCharacteristic(Characteristic.ConfiguredName, hdmiName)
                     .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
                     .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN)
                     .setCharacteristic(Characteristic.TargetVisibilityState, Characteristic.TargetVisibilityState.SHOWN);
