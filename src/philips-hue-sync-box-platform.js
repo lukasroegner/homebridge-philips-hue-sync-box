@@ -38,7 +38,8 @@ function PhilipsHueSyncBoxPlatform(log, config, api) {
     // Initializes the configuration
     platform.config.syncBoxIpAddress = platform.config.syncBoxIpAddress || null;
     platform.config.syncBoxApiAccessToken = platform.config.syncBoxApiAccessToken || null;
-    platform.config.defaultMode = platform.config.defaultMode || 'video';
+    platform.config.defaultOnMode = platform.config.defaultOnMode || 'video';
+    platform.config.defaultOffMode = platform.config.defaultOffMode || 'passthrough';
     platform.config.isApiEnabled = platform.config.isApiEnabled || false;
     platform.config.apiPort = platform.config.apiPort || 40220;
     platform.config.apiToken = platform.config.apiToken || null;
