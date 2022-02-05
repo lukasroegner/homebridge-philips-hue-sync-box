@@ -346,12 +346,20 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function() {}, function() {
+                let onMode = platform.config.defaultOnMode;
+                if (onMode === 'lastSyncMode') {
+                    if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                        onMode = device.state.execution.lastSyncMode;
+                    } else {
+                        onMode = 'video';
+                    }
+                }
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'powersave' }); }).then(function() {}, function() {
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -387,6 +395,168 @@ function SyncBoxDevice(platform, state) {
                 callback(null);
             });
         }
+
+        // Handles remote key input
+        tvService.getCharacteristic(Characteristic.RemoteKey).on('set', function (value, callback) {
+            platform.log.debug('Remote key pressed: ' + value);
+
+            let mode;
+            switch (value) {
+                case Characteristic.RemoteKey.ARROW_UP:
+                    platform.log.debug('Increase brightness by 25%');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
+                        platform.log('Failed to increase brightness by 25%');
+                    });
+                    break;
+                        
+                case Characteristic.RemoteKey.ARROW_DOWN:
+                    platform.log.debug('Decrease brightness by 25%');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
+                        platform.log('Failed to decrease brightness by 25%');
+                    });
+                    break;
+                
+                case Characteristic.RemoteKey.ARROW_LEFT:
+
+                    // Gets the current mode or the last sync mode to set the intensity
+                    mode = 'video';
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        mode = device.state.execution.mode;
+                    } else if (device.state.execution.lastSyncMode) {
+                        mode = device.state.execution.lastSyncMode;
+                    }
+                    
+                    device.platform.log.debug('Toggle intensity');
+                    switch (device.state.execution[mode].intensity) {
+                        case 'subtle':
+                            break;
+                        case 'moderate':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'high':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'intense':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.ARROW_RIGHT:
+
+                    // Gets the current mode or the last sync mode to set the intensity
+                    mode = 'video';
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        mode = device.state.execution.mode;
+                    } else if (device.state.execution.lastSyncMode) {
+                        mode = device.state.execution.lastSyncMode;
+                    }
+                    
+                    device.platform.log.debug('Toggle intensity');
+                    switch (device.state.execution[mode].intensity) {
+                        case 'subtle':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'moderate':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'high':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'intense':
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.SELECT:   
+                    device.platform.log.debug('Toggle mode');
+                    switch (device.state.execution.mode) {
+                        case 'video':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'music':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'game':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'passthrough':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.PLAY_PAUSE:
+                    platform.log.debug('Toggle switch state');
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                            platform.log('Failed to toggle switch state');
+                        });
+                    } else {
+                        let onMode = platform.config.defaultOnMode;
+                        if (onMode === 'lastSyncMode') {
+                            if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                                onMode = device.state.execution.lastSyncMode;
+                            } else {
+                                onMode = 'video';
+                            }
+                        }
+                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                            platform.log('Failed to toggle switch state');
+                        });
+                    }
+                    break;
+            
+                case Characteristic.RemoteKey.INFORMATION:   
+                    device.platform.log.debug('Toggle hdmi source');
+                    switch (device.state.execution.hdmiSource) {
+                        case 'input1':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input2':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input3':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input4':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                    }
+                    break;
+            }
+
+            // Performs the callback
+            callback(null);
+        });
 
         // Stores the tv service
         device.tvService = tvService;
@@ -456,12 +626,20 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function() {}, function() {
+                let onMode = platform.config.defaultOnMode;
+                if (onMode === 'lastSyncMode') {
+                    if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                        onMode = device.state.execution.lastSyncMode;
+                    } else {
+                        onMode = 'video';
+                    }
+                }
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'powersave' }); }).then(function() {}, function() {
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -512,6 +690,168 @@ function SyncBoxDevice(platform, state) {
                 callback(null);
             });
         }
+
+        // Handles remote key input
+        modeTvService.getCharacteristic(Characteristic.RemoteKey).on('set', function (value, callback) {
+            platform.log.debug('Remote key pressed: ' + value);
+
+            let mode;
+            switch (value) {
+                case Characteristic.RemoteKey.ARROW_UP:
+                    platform.log.debug('Increase brightness by 25%');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
+                        platform.log('Failed to increase brightness by 25%');
+                    });
+                    break;
+                        
+                case Characteristic.RemoteKey.ARROW_DOWN:
+                    platform.log.debug('Decrease brightness by 25%');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
+                        platform.log('Failed to decrease brightness by 25%');
+                    });
+                    break;
+                
+                case Characteristic.RemoteKey.ARROW_LEFT:
+
+                    // Gets the current mode or the last sync mode to set the intensity
+                    mode = 'video';
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        mode = device.state.execution.mode;
+                    } else if (device.state.execution.lastSyncMode) {
+                        mode = device.state.execution.lastSyncMode;
+                    }
+                    
+                    device.platform.log.debug('Toggle intensity');
+                    switch (device.state.execution[mode].intensity) {
+                        case 'subtle':
+                            break;
+                        case 'moderate':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'high':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'intense':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.ARROW_RIGHT:
+
+                    // Gets the current mode or the last sync mode to set the intensity
+                    mode = 'video';
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        mode = device.state.execution.mode;
+                    } else if (device.state.execution.lastSyncMode) {
+                        mode = device.state.execution.lastSyncMode;
+                    }
+                    
+                    device.platform.log.debug('Toggle intensity');
+                    switch (device.state.execution[mode].intensity) {
+                        case 'subtle':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'moderate':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'high':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'intense':
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.SELECT:   
+                    device.platform.log.debug('Toggle mode');
+                    switch (device.state.execution.mode) {
+                        case 'video':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'music':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'game':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'passthrough':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.PLAY_PAUSE:
+                    platform.log.debug('Toggle switch state');
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                            platform.log('Failed to toggle switch state');
+                        });
+                    } else {
+                        let onMode = platform.config.defaultOnMode;
+                        if (onMode === 'lastSyncMode') {
+                            if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                                onMode = device.state.execution.lastSyncMode;
+                            } else {
+                                onMode = 'video';
+                            }
+                        }
+                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                            platform.log('Failed to toggle switch state');
+                        });
+                    }
+                    break;
+            
+                case Characteristic.RemoteKey.INFORMATION:   
+                    device.platform.log.debug('Toggle hdmi source');
+                    switch (device.state.execution.hdmiSource) {
+                        case 'input1':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input2':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input3':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input4':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                    }
+                    break;
+            }
+
+            // Performs the callback
+            callback(null);
+        });
 
         // Stores the tv service
         device.modeTvService = modeTvService;
@@ -581,12 +921,20 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function() {}, function() {
+                let onMode = platform.config.defaultOnMode;
+                if (onMode === 'lastSyncMode') {
+                    if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                        onMode = device.state.execution.lastSyncMode;
+                    } else {
+                        onMode = 'video';
+                    }
+                }
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function() { return platform.client.updateExecution({ 'mode': 'powersave' }); }).then(function() {}, function() {
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -637,6 +985,168 @@ function SyncBoxDevice(platform, state) {
                 callback(null);
             });
         }
+
+        // Handles remote key input
+        intensityTvService.getCharacteristic(Characteristic.RemoteKey).on('set', function (value, callback) {
+            platform.log.debug('Remote key pressed: ' + value);
+
+            let mode;
+            switch (value) {
+                case Characteristic.RemoteKey.ARROW_UP:
+                    platform.log.debug('Increase brightness by 25%');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
+                        platform.log('Failed to increase brightness by 25%');
+                    });
+                    break;
+                        
+                case Characteristic.RemoteKey.ARROW_DOWN:
+                    platform.log.debug('Decrease brightness by 25%');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
+                        platform.log('Failed to decrease brightness by 25%');
+                    });
+                    break;
+                
+                case Characteristic.RemoteKey.ARROW_LEFT:
+
+                    // Gets the current mode or the last sync mode to set the intensity
+                    mode = 'video';
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        mode = device.state.execution.mode;
+                    } else if (device.state.execution.lastSyncMode) {
+                        mode = device.state.execution.lastSyncMode;
+                    }
+                    
+                    device.platform.log.debug('Toggle intensity');
+                    switch (device.state.execution[mode].intensity) {
+                        case 'subtle':
+                            break;
+                        case 'moderate':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'high':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'intense':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.ARROW_RIGHT:
+
+                    // Gets the current mode or the last sync mode to set the intensity
+                    mode = 'video';
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        mode = device.state.execution.mode;
+                    } else if (device.state.execution.lastSyncMode) {
+                        mode = device.state.execution.lastSyncMode;
+                    }
+                    
+                    device.platform.log.debug('Toggle intensity');
+                    switch (device.state.execution[mode].intensity) {
+                        case 'subtle':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'moderate':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'high':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'intense':
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.SELECT:   
+                    device.platform.log.debug('Toggle mode');
+                    switch (device.state.execution.mode) {
+                        case 'video':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'music':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'game':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'passthrough':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.PLAY_PAUSE:
+                    platform.log.debug('Toggle switch state');
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                            platform.log('Failed to toggle switch state');
+                        });
+                    } else {
+                        let onMode = platform.config.defaultOnMode;
+                        if (onMode === 'lastSyncMode') {
+                            if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                                onMode = device.state.execution.lastSyncMode;
+                            } else {
+                                onMode = 'video';
+                            }
+                        }
+                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                            platform.log('Failed to toggle switch state');
+                        });
+                    }
+                    break;
+            
+                case Characteristic.RemoteKey.INFORMATION:   
+                    device.platform.log.debug('Toggle hdmi source');
+                    switch (device.state.execution.hdmiSource) {
+                        case 'input1':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input2':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input3':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input4':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                    }
+                    break;
+            }
+
+            // Performs the callback
+            callback(null);
+        });
 
         // Stores the tv service
         device.intensityTvService = intensityTvService;

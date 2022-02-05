@@ -14,6 +14,13 @@ You can also enable additional TV accessories that support:
 * Switching modes
 * Switching intensity
 
+Each of the additional TV accessories supports the iOS remote widget:
+* Up/down: change brightness
+* Left/right: change intensity
+* Select (center button): toggle modes
+* Information button: toggle HDMI inputs
+* Play/Pause: toggle on/off
+
 **Important**: TV accessories must be added to HomeKit manually, the logs show the pin for adding them (should be the same pin as for the plugin).
 
 ## Installation
