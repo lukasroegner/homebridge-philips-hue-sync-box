@@ -13,6 +13,7 @@ You can also enable additional TV accessories that support:
 * Switching HDMI inputs
 * Switching modes
 * Switching intensity
+* Switching entertainment areas
 
 Each of the additional TV accessories supports the iOS remote widget:
 * Up/down: change brightness
@@ -72,6 +73,9 @@ Hints:
             "intensityTvAccessory": false,
             "intensityTvAccessoryType": "tv",
             "intensityTvAccessoryLightbulb": false,
+            "entertainmentTvAccessory": false,
+            "entertainmentTvAccessoryType": "tv",
+            "entertainmentTvAccessoryLightbulb": false,
             "isApiEnabled": false,
             "apiPort": 40220,
             "apiToken": "<YOUR-TOKEN>"
@@ -107,6 +111,12 @@ Hints:
 **intensityTvAccessoryType** (optional): Type of icon that the Apple Home app should show. Possible values are `tv`, `settopbox`, `tvstick` or `audioreceiver`. Defaults to `tv`.
 
 **intensityTvAccessoryLightbulb** (optional): Enables an integrated lightbulb for the  TV Accessory for switching the intensity. Defaults to `false`.
+
+**entertainmentTvAccessory** (optional): Enables a TV Accessory for switching the entertainment area of the Sync Box. Defaults to `false`.
+
+**entertainmentTvAccessoryType** (optional): Type of icon that the Apple Home app should show. Possible values are `tv`, `settopbox`, `tvstick` or `audioreceiver`. Defaults to `tv`.
+
+**entertainmentTvAccessoryLightbulb** (optional): Enables an integrated lightbulb for the  TV Accessory for switching the entertainment areas. Defaults to `false`.
 
 **isApiEnabled** (optional): Enables an HTTP API for controlling the Sync Box. Defaults to `false`. See **API** for more information.
 

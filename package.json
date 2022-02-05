@@ -1,6 +1,6 @@
 {
   "name": "homebridge-philips-hue-sync-box",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Homebridge plugin for the Philips Hue Sync Box. ",
   "license": "MIT",
   "keywords": [

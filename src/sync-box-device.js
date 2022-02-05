@@ -128,6 +128,30 @@ function SyncBoxDevice(platform, state) {
         deviceAccessories.push(intensityTvAccessory);
     }
 
+    // Gets the tv accessory
+    let entertainmentTvAccessory;
+    if(platform.config.entertainmentTvAccessory) {
+        platform.log('Adding new accessory with kind EntertainmentTVAccessory.');
+        entertainmentTvAccessory = new Accessory(state.device.name, UUIDGen.generate('EntertainmentTVAccessory'));
+        switch (platform.config.entertainmentTvAccessoryType) {
+            case 'settopbox':
+                entertainmentTvAccessory.category = Categories.TV_SET_TOP_BOX;
+                break;
+            case 'tvstick':
+                entertainmentTvAccessory.category = Categories.TV_STREAMING_STICK;
+                break;
+            case 'audioreceiver':
+                entertainmentTvAccessory.category = Categories.AUDIO_RECEIVER;
+                break;
+            default:
+                entertainmentTvAccessory.category = Categories.TELEVISION;
+                break;
+        }
+        entertainmentTvAccessory.context.kind = 'EntertainmentTVAccessory';
+        externalAccessories.push(entertainmentTvAccessory);
+        deviceAccessories.push(entertainmentTvAccessory);
+    }
+
     // Registers the newly created accessories
     platform.api.registerPlatformAccessories(platform.pluginName, platform.platformName, newDeviceAccessories);
 
@@ -158,6 +182,8 @@ function SyncBoxDevice(platform, state) {
             accessoryInformationService.setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId + '-M');
         } else if (deviceAccessory.context.kind == 'IntensityTVAccessory') {
             accessoryInformationService.setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId + '-I');
+        } else if (deviceAccessory.context.kind == 'EntertainmentTVAccessory') {
+            accessoryInformationService.setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId + '-E');
         } else {
             accessoryInformationService.setCharacteristic(Characteristic.SerialNumber, state.device.uniqueId);
         }  
@@ -1347,6 +1373,369 @@ function SyncBoxDevice(platform, state) {
         }
     }
 
+    // Handles the entertainment area TV accessory if it is enabled
+    if (entertainmentTvAccessory) {
+
+        // Updates tv service
+        let entertainmentTvService = entertainmentTvAccessory.getServiceByUUIDAndSubType(Service.Television, 'EntertainmentTVAccessory');
+        if (!entertainmentTvService) {
+            entertainmentTvService = entertainmentTvAccessory.addService(Service.Television, 'Entertainment Area', 'EntertainmentTVAccessory');
+
+            // Sets the TV name
+            if (mainAccessory) {
+                entertainmentTvService.setCharacteristic(Characteristic.ConfiguredName, mainAccessory.context.entertainmentTvAccessoryConfiguredName || state.device.name);
+                entertainmentTvService.getCharacteristic(Characteristic.ConfiguredName).on('set', function (value, callback) {
+                    mainAccessory.context.entertainmentTvAccessoryConfiguredName = value;
+                    callback(null);
+                });
+            } else {
+                entertainmentTvService.setCharacteristic(Characteristic.ConfiguredName, state.device.name);
+            }
+        }
+
+        // Register input sources
+        const entertainmentInputServices = [];
+        let i = 1;
+        for (let groupId in device.state.hue.groups) {
+            const group = device.state.hue.groups[groupId];
+
+            let entertainmentInputService = entertainmentTvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'AREA ' + i);
+            if (!entertainmentInputService) {
+                entertainmentInputService = entertainmentTvAccessory.addService(Service.InputSource, 'area' + i, 'AREA ' + i);
+
+                // Sets the TV name
+                entertainmentInputService
+                    .setCharacteristic(Characteristic.ConfiguredName, group.name)
+                    .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+                    .setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN)
+                    .setCharacteristic(Characteristic.TargetVisibilityState, Characteristic.TargetVisibilityState.SHOWN);
+            }
+            entertainmentInputService
+                .setCharacteristic(Characteristic.Identifier, i)
+                .setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.HDMI);
+
+            // Adds the input as a linked service, which is important so that the input is properly displayed in the Home app
+            entertainmentTvService.addLinkedService(entertainmentInputService);
+            entertainmentInputServices.push(entertainmentInputService);
+
+            i++;
+        }
+
+        // Sets sleep discovery characteristic (which is always discoverable as Homebridge is always running)
+        entertainmentTvService.setCharacteristic(Characteristic.SleepDiscoveryMode, Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE);
+
+        // Handles on/off events
+        entertainmentTvService.getCharacteristic(Characteristic.Active).on('set', function (value, callback) {
+
+            // Ignores changes if the new value equals the old value
+            if (entertainmentTvService.getCharacteristic(Characteristic.Active).value === value) {
+                if (value) {
+                    platform.log.debug('Switch state is already ON');
+                } else {
+                    platform.log.debug('Switch state is already OFF');
+                }
+                callback(null);
+                return;
+            }
+
+            // Saves the changes
+            if (value) {
+                platform.log.debug('Switch state to ON');
+                let onMode = platform.config.defaultOnMode;
+                if (onMode === 'lastSyncMode') {
+                    if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                        onMode = device.state.execution.lastSyncMode;
+                    } else {
+                        onMode = 'video';
+                    }
+                }
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                    platform.log('Failed to switch state to ON');
+                });
+            } else {
+                platform.log.debug('Switch state to OFF');
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                    platform.log('Failed to switch state to OFF');
+                });
+            }
+
+            // Performs the callback
+            callback(null);
+
+        });
+
+        // Handles input source changes
+        entertainmentTvService.getCharacteristic(Characteristic.ActiveIdentifier).on('set', function (value, callback) {
+
+            // Gets the ID of the group based on the index
+            let groupId;
+            let i = 1;
+            for (let currentGroupId in device.state.hue.groups) {
+                if (i == value) {
+                    groupId = currentGroupId;
+                    break;
+                }
+
+                i++;
+            }
+
+            const group = device.state.hue.groups[groupId];
+
+            // Saves the changes
+            platform.log.debug('Switch entertainment area to ' + group.name);
+            platform.limiter.schedule(function () { return platform.client.updateHue({ 'groupId': groupId }); }).then(function () {}, function () {
+                platform.log('Failed to switch entertainment area to ' + group.name);
+            });
+
+            // Performs the callback
+            callback(null);
+        });
+
+        // Handles showing/hiding of sources
+        for (let i = 0; i < entertainmentInputServices.length; i++) {
+            entertainmentInputServices[i].getCharacteristic(Characteristic.TargetVisibilityState).on('set', function (value, callback) {
+                if (value === Characteristic.TargetVisibilityState.SHOWN) {
+                    entertainmentInputServices[i].setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.SHOWN);
+                } else {
+                    entertainmentInputServices[i].setCharacteristic(Characteristic.CurrentVisibilityState, Characteristic.CurrentVisibilityState.HIDDEN);
+                }
+
+                // Performs the callback
+                callback(null);
+            });
+        }
+
+        // Handles remote key input
+        entertainmentTvService.getCharacteristic(Characteristic.RemoteKey).on('set', function (value, callback) {
+            platform.log.debug('Remote key pressed: ' + value);
+
+            let mode;
+            switch (value) {
+                case Characteristic.RemoteKey.ARROW_UP:
+                    platform.log.debug('Increase brightness by 25%');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
+                        platform.log('Failed to increase brightness by 25%');
+                    });
+                    break;
+                        
+                case Characteristic.RemoteKey.ARROW_DOWN:
+                    platform.log.debug('Decrease brightness by 25%');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
+                        platform.log('Failed to decrease brightness by 25%');
+                    });
+                    break;
+                
+                case Characteristic.RemoteKey.ARROW_LEFT:
+
+                    // Gets the current mode or the last sync mode to set the intensity
+                    mode = 'video';
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        mode = device.state.execution.mode;
+                    } else if (device.state.execution.lastSyncMode) {
+                        mode = device.state.execution.lastSyncMode;
+                    }
+                    
+                    device.platform.log.debug('Toggle intensity');
+                    switch (device.state.execution[mode].intensity) {
+                        case 'subtle':
+                            break;
+                        case 'moderate':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'high':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'intense':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.ARROW_RIGHT:
+
+                    // Gets the current mode or the last sync mode to set the intensity
+                    mode = 'video';
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        mode = device.state.execution.mode;
+                    } else if (device.state.execution.lastSyncMode) {
+                        mode = device.state.execution.lastSyncMode;
+                    }
+                    
+                    device.platform.log.debug('Toggle intensity');
+                    switch (device.state.execution[mode].intensity) {
+                        case 'subtle':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'moderate':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'high':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle intensity');
+                            });
+                            break;
+                        case 'intense':
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.SELECT:   
+                    device.platform.log.debug('Toggle mode');
+                    switch (device.state.execution.mode) {
+                        case 'video':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'music':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'game':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                        case 'passthrough':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
+                                platform.log('Failed to toggle mode');
+                            });
+                            break;
+                    }
+                    break;
+                
+                case Characteristic.RemoteKey.PLAY_PAUSE:
+                    platform.log.debug('Toggle switch state');
+                    if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
+                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                            platform.log('Failed to toggle switch state');
+                        });
+                    } else {
+                        let onMode = platform.config.defaultOnMode;
+                        if (onMode === 'lastSyncMode') {
+                            if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                                onMode = device.state.execution.lastSyncMode;
+                            } else {
+                                onMode = 'video';
+                            }
+                        }
+                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                            platform.log('Failed to toggle switch state');
+                        });
+                    }
+                    break;
+            
+                case Characteristic.RemoteKey.INFORMATION:   
+                    device.platform.log.debug('Toggle hdmi source');
+                    switch (device.state.execution.hdmiSource) {
+                        case 'input1':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input2':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input3':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                        case 'input4':
+                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
+                                platform.log('Failed to switch hdmi source');
+                            });
+                            break;
+                    }
+                    break;
+            }
+
+            // Performs the callback
+            callback(null);
+        });
+
+        // Stores the tv service
+        device.entertainmentTvService = entertainmentTvService;
+
+        // Handles the lightbulb accessory if it is enabled
+        if (platform.config.entertainmentTvAccessoryLightbulb) {
+
+            // Updates the light bulb service
+            let entertainmentTvAccessoryLightBulbService = entertainmentTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+            if (!entertainmentTvAccessoryLightBulbService) {
+                entertainmentTvAccessoryLightBulbService = entertainmentTvAccessory.addService(Service.Lightbulb);
+            }
+
+            // Stores the light bulb service
+            device.entertainmentTvAccessoryLightBulbService = entertainmentTvAccessoryLightBulbService;
+
+            // Subscribes for changes of the on characteristic
+            entertainmentTvAccessoryLightBulbService.getCharacteristic(Characteristic.On).on('set', function (value, callback) {
+
+                // Ignores changes if the new value equals the old value
+                if (entertainmentTvAccessoryLightBulbService.getCharacteristic(Characteristic.On).value === value) {
+                    if (value) {
+                        platform.log.debug('Switch state is already ON');
+                    } else {
+                        platform.log.debug('Switch state is already OFF');
+                    }
+                    callback(null);
+                    return;
+                }
+
+                // Saves the changes
+                if (value) {
+                    platform.log.debug('Switch state to ON');
+                    let onMode = platform.config.defaultOnMode;
+                    if (onMode === 'lastSyncMode') {
+                        if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                            onMode = device.state.execution.lastSyncMode;
+                        } else {
+                            onMode = 'video';
+                        }
+                    }
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                        platform.log('Failed to switch state to ON');
+                    });
+                } else {
+                    platform.log.debug('Switch state to OFF');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                        platform.log('Failed to switch state to OFF');
+                    });
+                }
+
+                // Performs the callback
+                callback(null);
+            });
+
+            // Subscribes for changes of the brightness characteristic
+            entertainmentTvAccessoryLightBulbService.getCharacteristic(Characteristic.Brightness).on('set', function (value, callback) {
+
+                // Saves the changes
+                platform.log.debug('Switch brightness to ' + value);
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+                    platform.log('Failed to switch brightness to ' + value);
+                });
+
+                // Performs the callback
+                callback(null);
+            });
+        }
+    }
+
     // Publishes the external accessories (i.e. the TV accessories)
     if (externalAccessories.length > 0) {
         platform.api.publishExternalAccessories(platform.pluginName, externalAccessories);
@@ -1490,6 +1879,39 @@ SyncBoxDevice.prototype.update = function (state) {
             // Updates the brightness characteristic
             device.platform.log.debug('Updated brightness to ' + state.execution.brightness);
             device.intensityTvAccessoryLightBulbService.updateCharacteristic(Characteristic.Brightness, Math.round((state.execution.brightness / 200.0) * 100));
+        }
+    }
+
+    // Updates the corresponding service of the entertainment area TV accessory
+    if (device.entertainmentTvService) {
+
+        // Updates the on characteristic
+        device.platform.log.debug('Updated state to ' + state.execution.mode);
+        device.entertainmentTvService.updateCharacteristic(Characteristic.Active, state.execution.mode !== 'powersave');
+
+        // Gets the ID of the group based on the index
+        let index = 1;
+        for (let currentGroupId in device.state.hue.groups) {
+            if (currentGroupId === state.hue.groupId) {
+                break;
+            }
+
+            index++;
+        }
+
+        // Updates the input characteristic
+        device.entertainmentTvService.updateCharacteristic(Characteristic.ActiveIdentifier, index);
+
+        // Updates the corresponding service
+        if (device.entertainmentTvAccessoryLightBulbService) {
+
+            // Updates the on characteristic
+            device.platform.log.debug('Updated state to ' + state.execution.mode);
+            device.entertainmentTvAccessoryLightBulbService.updateCharacteristic(Characteristic.On, state.execution.mode !== 'powersave' && state.execution.mode !== 'passthrough');
+
+            // Updates the brightness characteristic
+            device.platform.log.debug('Updated brightness to ' + state.execution.brightness);
+            device.entertainmentTvAccessoryLightBulbService.updateCharacteristic(Characteristic.Brightness, Math.round((state.execution.brightness / 200.0) * 100));
         }
     }
 }

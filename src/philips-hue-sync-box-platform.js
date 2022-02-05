@@ -46,10 +46,16 @@ function PhilipsHueSyncBoxPlatform(log, config, api) {
     platform.config.apiToken = platform.config.apiToken || null;
     platform.config.tvAccessory = platform.config.tvAccessory || false;
     platform.config.tvAccessoryType = platform.config.tvAccessoryType || 'tv';
+    platform.config.tvAccessoryLightbulb = platform.config.tvAccessoryLightbulb || false;
     platform.config.modeTvAccessory = platform.config.modeTvAccessory || false;
     platform.config.modeTvAccessoryType = platform.config.modeTvAccessoryType || 'tv';
+    platform.config.modeTvAccessoryLightbulb = platform.config.modeTvAccessoryLightbulb || false;
     platform.config.intensityTvAccessory = platform.config.intensityTvAccessory || false;
     platform.config.intensityTvAccessoryType = platform.config.intensityTvAccessoryType || 'tv';
+    platform.config.intensityTvAccessoryLightbulb = platform.config.intensityTvAccessoryLightbulb || false;
+    platform.config.entertainmentTvAccessory = platform.config.entertainmentTvAccessory || false;
+    platform.config.entertainmentTvAccessoryType = platform.config.entertainmentTvAccessoryType || 'tv';
+    platform.config.entertainmentTvAccessoryLightbulb = platform.config.entertainmentTvAccessoryLightbulb || false;
     platform.config.requestsPerSecond = 5;
     platform.config.updateInterval = 10000;
 
