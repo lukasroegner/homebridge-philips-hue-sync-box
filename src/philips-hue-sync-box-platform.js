@@ -3,7 +3,6 @@ const Bottleneck = require('bottleneck');
 
 const PhilipsHueSyncBoxClient = require('./philips-hue-sync-box-client');
 const SyncBoxDevice = require('./sync-box-device');
-const SyncBoxApi = require('./sync-box-api');
 
 /**
  * Initializes a new platform instance for the Philips Hue Sync Box plugin.
@@ -32,38 +31,45 @@ function PhilipsHueSyncBoxPlatform(log, config, api) {
     // Defines the variables that are used throughout the platform
     platform.log = log;
     platform.config = config;
-    platform.device = null;
+    platform.devices = [];
     platform.accessories = [];
 
     // Initializes the configuration
-    platform.config.syncBoxIpAddress = platform.config.syncBoxIpAddress || null;
-    platform.config.syncBoxApiAccessToken = platform.config.syncBoxApiAccessToken || null;
-    platform.config.defaultOnMode = platform.config.defaultOnMode || 'video';
-    platform.config.defaultOffMode = platform.config.defaultOffMode || 'passthrough';
-    platform.config.baseAccessory = platform.config.baseAccessory || 'lightbulb';
-    platform.config.isApiEnabled = platform.config.isApiEnabled || false;
-    platform.config.apiPort = platform.config.apiPort || 40220;
-    platform.config.apiToken = platform.config.apiToken || null;
-    platform.config.tvAccessory = platform.config.tvAccessory || false;
-    platform.config.tvAccessoryType = platform.config.tvAccessoryType || 'tv';
-    platform.config.tvAccessoryLightbulb = platform.config.tvAccessoryLightbulb || false;
-    platform.config.modeTvAccessory = platform.config.modeTvAccessory || false;
-    platform.config.modeTvAccessoryType = platform.config.modeTvAccessoryType || 'tv';
-    platform.config.modeTvAccessoryLightbulb = platform.config.modeTvAccessoryLightbulb || false;
-    platform.config.intensityTvAccessory = platform.config.intensityTvAccessory || false;
-    platform.config.intensityTvAccessoryType = platform.config.intensityTvAccessoryType || 'tv';
-    platform.config.intensityTvAccessoryLightbulb = platform.config.intensityTvAccessoryLightbulb || false;
-    platform.config.entertainmentTvAccessory = platform.config.entertainmentTvAccessory || false;
-    platform.config.entertainmentTvAccessoryType = platform.config.entertainmentTvAccessoryType || 'tv';
-    platform.config.entertainmentTvAccessoryLightbulb = platform.config.entertainmentTvAccessoryLightbulb || false;
-    platform.config.requestsPerSecond = 5;
-    platform.config.updateInterval = 10000;
+    if (!platform.config.devices || platform.config.devices.length == 0) {
+        platform.log('Please update your configuration. Devices should be provided in an array.');
+        return;
+    }
 
-    // Initializes the limiter
-    platform.limiter = new Bottleneck({
-        maxConcurrent: 1,
-        minTime: 1000.0 / platform.config.requestsPerSecond
-    });
+    // Makes sure to set the defaults for the configuration
+    for (let i = 0; i < platform.config.devices.length; i++) {
+        const device = platform.config.devices[i];
+
+        device.syncBoxIpAddress = device.syncBoxIpAddress || null;
+        device.syncBoxApiAccessToken = device.syncBoxApiAccessToken || null;
+        device.defaultOnMode = device.defaultOnMode || 'video';
+        device.defaultOffMode = device.defaultOffMode || 'passthrough';
+        device.baseAccessory = device.baseAccessory || 'lightbulb';
+        device.tvAccessory = device.tvAccessory || false;
+        device.tvAccessoryType = device.tvAccessoryType || 'tv';
+        device.tvAccessoryLightbulb = device.tvAccessoryLightbulb || false;
+        device.modeTvAccessory = device.modeTvAccessory || false;
+        device.modeTvAccessoryType = device.modeTvAccessoryType || 'tv';
+        device.modeTvAccessoryLightbulb = device.modeTvAccessoryLightbulb || false;
+        device.intensityTvAccessory = device.intensityTvAccessory || false;
+        device.intensityTvAccessoryType = device.intensityTvAccessoryType || 'tv';
+        device.intensityTvAccessoryLightbulb = device.intensityTvAccessoryLightbulb || false;
+        device.entertainmentTvAccessory = device.entertainmentTvAccessory || false;
+        device.entertainmentTvAccessoryType = device.entertainmentTvAccessoryType || 'tv';
+        device.entertainmentTvAccessoryLightbulb = device.entertainmentTvAccessoryLightbulb || false;
+        device.requestsPerSecond = 5;
+        device.updateInterval = 10000;
+
+        // Checks if all required information is provided
+        if (!device.syncBoxIpAddress || !device.syncBoxApiAccessToken) {
+            platform.log('No Sync Box IP address or access token provided.');
+            return;
+        }
+    }
 
     // Checks whether the API object is available
     if (!api) {
@@ -75,45 +81,45 @@ function PhilipsHueSyncBoxPlatform(log, config, api) {
     platform.log('Homebridge API available.');
     platform.api = api;
 
-    // Checks if all required information is provided
-    if (!platform.config.syncBoxIpAddress || !platform.config.syncBoxApiAccessToken) {
-        platform.log('No Sync Box IP address or access token provided.');
-        return;
-    }
-
-    // Initializes the client
-    platform.client = new PhilipsHueSyncBoxClient(this);
-    
     // Subscribes to the event that is raised when homebridge finished loading cached accessories
     platform.api.on('didFinishLaunching', function () {
         platform.log('Cached accessories loaded.');
 
         // Initially gets the state
-        platform.limiter.schedule(function() { return platform.client.getState(); }).then(function(state) {
+        for (let i = 0; i < platform.config.devices.length; i++) {
+            const deviceConfig = platform.config.devices[i];
 
-            // Creates the Sync Box instance
-            platform.log('Create Sync Box.');
-            platform.device = new SyncBoxDevice(platform, state);
-
-            // Starts the timer for updating the Sync Box
-            setInterval(function() {
-                platform.limiter.schedule(function() { return platform.client.getState(); }).then(function(state) {
-                    platform.device.update(state);
-                }, function() {
-                    platform.log('Error while getting the state.');
-                });
-            }, platform.config.updateInterval);
+            // Initializes the client
+            const client = new PhilipsHueSyncBoxClient(this, deviceConfig);
             
-            // Initialization completed
-            platform.log('Initialization completed.');
+            // Initializes the limiter
+            const limiter = new Bottleneck({
+                maxConcurrent: 1,
+                minTime: 1000.0 / deviceConfig.requestsPerSecond
+            });
+    
+            limiter.schedule(function () { return client.getState(); }).then(function (state) {
 
-            // Starts the API if requested
-            if (platform.config.isApiEnabled) {
-                platform.syncBoxApi = new SyncBoxApi(platform);
-            }
-        }, function() {
-            platform.log('Error while getting the state. Please check the access token.');
-        });
+                // Creates the Sync Box instance
+                platform.log('Create Sync Box.');
+                const device = new SyncBoxDevice(platform, deviceConfig, client, limiter, state);
+                platform.devices.push(device);
+
+                // Starts the timer for updating the Sync Box
+                setInterval(function () {
+                    limiter.schedule(function () { return client.getState(); }).then(function (state) {
+                        device.update(state);
+                    }, function () {
+                        platform.log('Error while getting the state.');
+                    });
+                }, deviceConfig.updateInterval);
+            
+                // Initialization completed
+                platform.log('Initialization of Sync Box completed.');
+            }, function () {
+                platform.log('Error while getting the state. Please check the access token.');
+            });
+        }
     });
 }
 

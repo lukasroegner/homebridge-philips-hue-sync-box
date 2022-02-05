@@ -4,12 +4,13 @@ const request = require('request');
 /**
  * Represents the client for communicating with the Philips Hue Sync Box.
  * @param platform The PhilipsHueSyncBoxPlatform instance.
+ * @param config The configuration of the device that this client communicates with.
  */
-function PhilipsHueSyncBoxClient(platform) {
+function PhilipsHueSyncBoxClient(platform, config) {
     const client = this;
 
-    // Sets the platform for further use
     client.platform = platform;
+    client.config = config;
 }
 
 /**
@@ -52,11 +53,11 @@ PhilipsHueSyncBoxClient.prototype.send = function (method, uri, body) {
     const client = this;
 
     // Checks if all required information is provided
-    if (!client.platform.config.syncBoxIpAddress) {
+    if (!client.config.syncBoxIpAddress) {
         client.platform.log('No Sync Box IP address provided.');
         return;
     }
-    if (!client.platform.config.syncBoxApiAccessToken) {
+    if (!client.config.syncBoxApiAccessToken) {
         client.platform.log('No access token for the Sync Box provided.');
         return;
     }
@@ -64,9 +65,9 @@ PhilipsHueSyncBoxClient.prototype.send = function (method, uri, body) {
     // Sends out the request
     return new Promise(function(resolve, reject) {
         request({
-            uri: 'https://' + client.platform.config.syncBoxIpAddress + '/api/v1' + uri,
+            uri: 'https://' + client.config.syncBoxIpAddress + '/api/v1' + uri,
             headers: {
-                'Authorization': 'Bearer ' + client.platform.config.syncBoxApiAccessToken
+                'Authorization': 'Bearer ' + client.config.syncBoxApiAccessToken
             },
             method: method,
             body: body,

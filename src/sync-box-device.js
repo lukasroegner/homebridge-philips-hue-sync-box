@@ -2,21 +2,24 @@
 /**
  * Represents a physical Sync Box device.
  * @param platform The PhilipsHueSyncBoxPlatform instance.
+ * @param config The device configuration.
+ * @param client The client for communication.
+ * @param limiter The limiter for throttling requests.
  * @param state The state.
  */
-function SyncBoxDevice(platform, state) {
+function SyncBoxDevice(platform, config, client, limiter, state) {
     const device = this;
     const { UUIDGen, Accessory, Characteristic, Service, Categories } = platform;
 
-    // Sets the platform
     device.platform = platform;
-
-    // Stores the latest state
+    device.config = config;
+    device.client = client;
+    device.limiter = limiter;
     device.state = state;
 
     // Gets all accessories from the platform
     let externalAccessories = [];
-    let unusedDeviceAccessories = platform.accessories.slice();
+    let unusedDeviceAccessories = platform.accessories.filter(function (a) { return a.context.ipAddress = device.config.syncBoxIpAddress; });
     let newDeviceAccessories = [];
     let deviceAccessories = [];
 
@@ -24,7 +27,7 @@ function SyncBoxDevice(platform, state) {
 
     // Gets the main light bulb accessory
     let lightBulbAccessory;
-    if(platform.config.baseAccessory === 'lightbulb') {
+    if(device.config.baseAccessory === 'lightbulb') {
         lightBulbAccessory = unusedDeviceAccessories.find(function (a) { return a.context.kind === 'LightBulbAccessory'; });
         if (lightBulbAccessory) {
             unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(lightBulbAccessory), 1);
@@ -32,6 +35,7 @@ function SyncBoxDevice(platform, state) {
             platform.log('Adding new accessory with kind LightBulbAccessory.');
             lightBulbAccessory = new Accessory(state.device.name, UUIDGen.generate('LightBulbAccessory'));
             lightBulbAccessory.context.kind = 'LightBulbAccessory';
+            lightBulbAccessory.context.ipAddress = device.config.syncBoxIpAddress;
             newDeviceAccessories.push(lightBulbAccessory);
         }
         deviceAccessories.push(lightBulbAccessory);
@@ -41,7 +45,7 @@ function SyncBoxDevice(platform, state) {
 
     // Gets the main switch accessory
     let switchAccessory;
-    if(platform.config.baseAccessory === 'switch') {
+    if (device.config.baseAccessory === 'switch') {
         switchAccessory = unusedDeviceAccessories.find(function (a) { return a.context.kind === 'SwitchAccessory'; });
         if (switchAccessory) {
             unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(switchAccessory), 1);
@@ -49,6 +53,7 @@ function SyncBoxDevice(platform, state) {
             platform.log('Adding new accessory with kind SwitchAccessory.');
             switchAccessory = new Accessory(state.device.name, UUIDGen.generate('SwitchAccessory'));
             switchAccessory.context.kind = 'SwitchAccessory';
+            switchAccessory.context.ipAddress = device.config.syncBoxIpAddress;
             newDeviceAccessories.push(switchAccessory);
         }
         deviceAccessories.push(switchAccessory);
@@ -58,10 +63,10 @@ function SyncBoxDevice(platform, state) {
 
     // Gets the tv accessory
     let tvAccessory;
-    if(platform.config.tvAccessory) {
+    if (device.config.tvAccessory) {
         platform.log('Setting up accessory with kind TVAccessory.');
         tvAccessory = new Accessory(state.device.name, UUIDGen.generate('TVAccessory'));
-        switch (platform.config.tvAccessoryType) {
+        switch (device.config.tvAccessoryType) {
             case 'settopbox':
                 tvAccessory.category = Categories.TV_SET_TOP_BOX;
                 break;
@@ -76,16 +81,17 @@ function SyncBoxDevice(platform, state) {
                 break;
         }
         tvAccessory.context.kind = 'TVAccessory';
+        tvAccessory.context.ipAddress = device.config.syncBoxIpAddress;
         externalAccessories.push(tvAccessory);
         deviceAccessories.push(tvAccessory);
     }
 
     // Gets the tv accessory
     let modeTvAccessory;
-    if(platform.config.modeTvAccessory) {
+    if (device.config.modeTvAccessory) {
         platform.log('Setting up accessory with kind ModeTVAccessory.');
         modeTvAccessory = new Accessory(state.device.name, UUIDGen.generate('ModeTVAccessory'));
-        switch (platform.config.modeTvAccessoryType) {
+        switch (device.config.modeTvAccessoryType) {
             case 'settopbox':
                 modeTvAccessory.category = Categories.TV_SET_TOP_BOX;
                 break;
@@ -100,16 +106,17 @@ function SyncBoxDevice(platform, state) {
                 break;
         }
         modeTvAccessory.context.kind = 'ModeTVAccessory';
+        modeTvAccessory.context.ipAddress = device.config.syncBoxIpAddress;
         externalAccessories.push(modeTvAccessory);
         deviceAccessories.push(modeTvAccessory);
     }
 
     // Gets the tv accessory
     let intensityTvAccessory;
-    if(platform.config.intensityTvAccessory) {
+    if (device.config.intensityTvAccessory) {
         platform.log('Adding new accessory with kind IntensityTVAccessory.');
         intensityTvAccessory = new Accessory(state.device.name, UUIDGen.generate('IntensityTVAccessory'));
-        switch (platform.config.intensityTvAccessoryType) {
+        switch (device.config.intensityTvAccessoryType) {
             case 'settopbox':
                 intensityTvAccessory.category = Categories.TV_SET_TOP_BOX;
                 break;
@@ -124,16 +131,17 @@ function SyncBoxDevice(platform, state) {
                 break;
         }
         intensityTvAccessory.context.kind = 'IntensityTVAccessory';
+        intensityTvAccessory.context.ipAddress = device.config.syncBoxIpAddress;
         externalAccessories.push(intensityTvAccessory);
         deviceAccessories.push(intensityTvAccessory);
     }
 
     // Gets the tv accessory
     let entertainmentTvAccessory;
-    if(platform.config.entertainmentTvAccessory) {
+    if (device.config.entertainmentTvAccessory) {
         platform.log('Adding new accessory with kind EntertainmentTVAccessory.');
         entertainmentTvAccessory = new Accessory(state.device.name, UUIDGen.generate('EntertainmentTVAccessory'));
-        switch (platform.config.entertainmentTvAccessoryType) {
+        switch (device.config.entertainmentTvAccessoryType) {
             case 'settopbox':
                 entertainmentTvAccessory.category = Categories.TV_SET_TOP_BOX;
                 break;
@@ -148,6 +156,7 @@ function SyncBoxDevice(platform, state) {
                 break;
         }
         entertainmentTvAccessory.context.kind = 'EntertainmentTVAccessory';
+        entertainmentTvAccessory.context.ipAddress = device.config.syncBoxIpAddress;
         externalAccessories.push(entertainmentTvAccessory);
         deviceAccessories.push(entertainmentTvAccessory);
     }
@@ -218,7 +227,7 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                let onMode = platform.config.defaultOnMode;
+                let onMode = device.config.defaultOnMode;
                 if (onMode === 'lastSyncMode') {
                     if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                         onMode = device.state.execution.lastSyncMode;
@@ -226,12 +235,12 @@ function SyncBoxDevice(platform, state) {
                         onMode = 'video';
                     }
                 }
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -245,7 +254,7 @@ function SyncBoxDevice(platform, state) {
 
             // Saves the changes
             platform.log.debug('Switch brightness to ' + value);
-            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+            device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
                 platform.log('Failed to switch brightness to ' + value);
             });
 
@@ -283,7 +292,7 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                let onMode = platform.config.defaultOnMode;
+                let onMode = device.config.defaultOnMode;
                 if (onMode === 'lastSyncMode') {
                     if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                         onMode = device.state.execution.lastSyncMode;
@@ -291,12 +300,12 @@ function SyncBoxDevice(platform, state) {
                         onMode = 'video';
                     }
                 }
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -372,7 +381,7 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                let onMode = platform.config.defaultOnMode;
+                let onMode = device.config.defaultOnMode;
                 if (onMode === 'lastSyncMode') {
                     if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                         onMode = device.state.execution.lastSyncMode;
@@ -380,12 +389,12 @@ function SyncBoxDevice(platform, state) {
                         onMode = 'video';
                     }
                 }
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -400,7 +409,7 @@ function SyncBoxDevice(platform, state) {
 
             // Saves the changes
             platform.log.debug('Switch hdmi source to input' + value);
-            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input' + value}); }).then(function () {}, function () {
+            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input' + value}); }).then(function () {}, function () {
                 platform.log('Failed to switch hdmi source to input' + value);
             });
 
@@ -430,14 +439,14 @@ function SyncBoxDevice(platform, state) {
             switch (value) {
                 case Characteristic.RemoteKey.ARROW_UP:
                     platform.log.debug('Increase brightness by 25%');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
                         platform.log('Failed to increase brightness by 25%');
                     });
                     break;
                         
                 case Characteristic.RemoteKey.ARROW_DOWN:
                     platform.log.debug('Decrease brightness by 25%');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
                         platform.log('Failed to decrease brightness by 25%');
                     });
                     break;
@@ -457,17 +466,17 @@ function SyncBoxDevice(platform, state) {
                         case 'subtle':
                             break;
                         case 'moderate':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'high':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'intense':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
@@ -487,17 +496,17 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle intensity');
                     switch (device.state.execution[mode].intensity) {
                         case 'subtle':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'moderate':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'high':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
@@ -510,22 +519,22 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle mode');
                     switch (device.state.execution.mode) {
                         case 'video':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'music':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'game':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'passthrough':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
@@ -535,11 +544,11 @@ function SyncBoxDevice(platform, state) {
                 case Characteristic.RemoteKey.PLAY_PAUSE:
                     platform.log.debug('Toggle switch state');
                     if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
-                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                        device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                             platform.log('Failed to toggle switch state');
                         });
                     } else {
-                        let onMode = platform.config.defaultOnMode;
+                        let onMode = device.config.defaultOnMode;
                         if (onMode === 'lastSyncMode') {
                             if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                                 onMode = device.state.execution.lastSyncMode;
@@ -547,7 +556,7 @@ function SyncBoxDevice(platform, state) {
                                 onMode = 'video';
                             }
                         }
-                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                        device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                             platform.log('Failed to toggle switch state');
                         });
                     }
@@ -557,22 +566,22 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle hdmi source');
                     switch (device.state.execution.hdmiSource) {
                         case 'input1':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input2':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input3':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input4':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
@@ -588,7 +597,7 @@ function SyncBoxDevice(platform, state) {
         device.tvService = tvService;
 
         // Handles the lightbulb accessory if it is enabled
-        if (platform.config.tvAccessoryLightbulb) {
+        if (device.config.tvAccessoryLightbulb) {
 
             // Updates the light bulb service
             let tvAccessoryLightBulbService = tvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
@@ -616,7 +625,7 @@ function SyncBoxDevice(platform, state) {
                 // Saves the changes
                 if (value) {
                     platform.log.debug('Switch state to ON');
-                    let onMode = platform.config.defaultOnMode;
+                    let onMode = device.config.defaultOnMode;
                     if (onMode === 'lastSyncMode') {
                         if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                             onMode = device.state.execution.lastSyncMode;
@@ -624,12 +633,12 @@ function SyncBoxDevice(platform, state) {
                             onMode = 'video';
                         }
                     }
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                         platform.log('Failed to switch state to ON');
                     });
                 } else {
                     platform.log.debug('Switch state to OFF');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                         platform.log('Failed to switch state to OFF');
                     });
                 }
@@ -643,7 +652,7 @@ function SyncBoxDevice(platform, state) {
 
                 // Saves the changes
                 platform.log.debug('Switch brightness to ' + value);
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
                     platform.log('Failed to switch brightness to ' + value);
                 });
 
@@ -717,7 +726,7 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                let onMode = platform.config.defaultOnMode;
+                let onMode = device.config.defaultOnMode;
                 if (onMode === 'lastSyncMode') {
                     if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                         onMode = device.state.execution.lastSyncMode;
@@ -725,12 +734,12 @@ function SyncBoxDevice(platform, state) {
                         onMode = 'video';
                     }
                 }
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -760,7 +769,7 @@ function SyncBoxDevice(platform, state) {
                     break;
             }
             platform.log.debug('Switch mode to ' + mode);
-            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': mode }); }).then(function () {}, function () {
+            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': mode }); }).then(function () {}, function () {
                 platform.log('Failed to switch mode to ' + mode);
             });
 
@@ -790,14 +799,14 @@ function SyncBoxDevice(platform, state) {
             switch (value) {
                 case Characteristic.RemoteKey.ARROW_UP:
                     platform.log.debug('Increase brightness by 25%');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
                         platform.log('Failed to increase brightness by 25%');
                     });
                     break;
                         
                 case Characteristic.RemoteKey.ARROW_DOWN:
                     platform.log.debug('Decrease brightness by 25%');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
                         platform.log('Failed to decrease brightness by 25%');
                     });
                     break;
@@ -817,17 +826,17 @@ function SyncBoxDevice(platform, state) {
                         case 'subtle':
                             break;
                         case 'moderate':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'high':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'intense':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
@@ -847,17 +856,17 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle intensity');
                     switch (device.state.execution[mode].intensity) {
                         case 'subtle':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'moderate':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'high':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
@@ -870,22 +879,22 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle mode');
                     switch (device.state.execution.mode) {
                         case 'video':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'music':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'game':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'passthrough':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
@@ -895,11 +904,11 @@ function SyncBoxDevice(platform, state) {
                 case Characteristic.RemoteKey.PLAY_PAUSE:
                     platform.log.debug('Toggle switch state');
                     if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
-                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                        device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                             platform.log('Failed to toggle switch state');
                         });
                     } else {
-                        let onMode = platform.config.defaultOnMode;
+                        let onMode = device.config.defaultOnMode;
                         if (onMode === 'lastSyncMode') {
                             if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                                 onMode = device.state.execution.lastSyncMode;
@@ -907,7 +916,7 @@ function SyncBoxDevice(platform, state) {
                                 onMode = 'video';
                             }
                         }
-                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                        device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                             platform.log('Failed to toggle switch state');
                         });
                     }
@@ -917,22 +926,22 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle hdmi source');
                     switch (device.state.execution.hdmiSource) {
                         case 'input1':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input2':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input3':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input4':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
@@ -948,7 +957,7 @@ function SyncBoxDevice(platform, state) {
         device.modeTvService = modeTvService;
 
         // Handles the lightbulb accessory if it is enabled
-        if (platform.config.modeTvAccessoryLightbulb) {
+        if (device.config.modeTvAccessoryLightbulb) {
 
             // Updates the light bulb service
             let modeTvAccessoryLightBulbService = modeTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
@@ -976,7 +985,7 @@ function SyncBoxDevice(platform, state) {
                 // Saves the changes
                 if (value) {
                     platform.log.debug('Switch state to ON');
-                    let onMode = platform.config.defaultOnMode;
+                    let onMode = device.config.defaultOnMode;
                     if (onMode === 'lastSyncMode') {
                         if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                             onMode = device.state.execution.lastSyncMode;
@@ -984,12 +993,12 @@ function SyncBoxDevice(platform, state) {
                             onMode = 'video';
                         }
                     }
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                         platform.log('Failed to switch state to ON');
                     });
                 } else {
                     platform.log.debug('Switch state to OFF');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                         platform.log('Failed to switch state to OFF');
                     });
                 }
@@ -1003,7 +1012,7 @@ function SyncBoxDevice(platform, state) {
 
                 // Saves the changes
                 platform.log.debug('Switch brightness to ' + value);
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
                     platform.log('Failed to switch brightness to ' + value);
                 });
 
@@ -1077,7 +1086,7 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                let onMode = platform.config.defaultOnMode;
+                let onMode = device.config.defaultOnMode;
                 if (onMode === 'lastSyncMode') {
                     if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                         onMode = device.state.execution.lastSyncMode;
@@ -1085,12 +1094,12 @@ function SyncBoxDevice(platform, state) {
                         onMode = 'video';
                     }
                 }
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -1120,7 +1129,7 @@ function SyncBoxDevice(platform, state) {
                     break;
             }
             platform.log.debug('Switch intensity to ' + intensity);
-            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': intensity }); }).then(function () {}, function () {
+            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': intensity }); }).then(function () {}, function () {
                 platform.log('Failed to switch intensity to ' + intensity);
             });
 
@@ -1150,14 +1159,14 @@ function SyncBoxDevice(platform, state) {
             switch (value) {
                 case Characteristic.RemoteKey.ARROW_UP:
                     platform.log.debug('Increase brightness by 25%');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
                         platform.log('Failed to increase brightness by 25%');
                     });
                     break;
                         
                 case Characteristic.RemoteKey.ARROW_DOWN:
                     platform.log.debug('Decrease brightness by 25%');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
                         platform.log('Failed to decrease brightness by 25%');
                     });
                     break;
@@ -1177,17 +1186,17 @@ function SyncBoxDevice(platform, state) {
                         case 'subtle':
                             break;
                         case 'moderate':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'high':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'intense':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
@@ -1207,17 +1216,17 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle intensity');
                     switch (device.state.execution[mode].intensity) {
                         case 'subtle':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'moderate':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'high':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
@@ -1230,22 +1239,22 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle mode');
                     switch (device.state.execution.mode) {
                         case 'video':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'music':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'game':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'passthrough':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
@@ -1255,11 +1264,11 @@ function SyncBoxDevice(platform, state) {
                 case Characteristic.RemoteKey.PLAY_PAUSE:
                     platform.log.debug('Toggle switch state');
                     if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
-                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                        device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                             platform.log('Failed to toggle switch state');
                         });
                     } else {
-                        let onMode = platform.config.defaultOnMode;
+                        let onMode = device.config.defaultOnMode;
                         if (onMode === 'lastSyncMode') {
                             if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                                 onMode = device.state.execution.lastSyncMode;
@@ -1267,7 +1276,7 @@ function SyncBoxDevice(platform, state) {
                                 onMode = 'video';
                             }
                         }
-                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                        device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                             platform.log('Failed to toggle switch state');
                         });
                     }
@@ -1277,22 +1286,22 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle hdmi source');
                     switch (device.state.execution.hdmiSource) {
                         case 'input1':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input2':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input3':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input4':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
@@ -1308,7 +1317,7 @@ function SyncBoxDevice(platform, state) {
         device.intensityTvService = intensityTvService;
 
         // Handles the lightbulb accessory if it is enabled
-        if (platform.config.intensityTvAccessoryLightbulb) {
+        if (device.config.intensityTvAccessoryLightbulb) {
 
             // Updates the light bulb service
             let intensityTvAccessoryLightBulbService = intensityTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
@@ -1336,7 +1345,7 @@ function SyncBoxDevice(platform, state) {
                 // Saves the changes
                 if (value) {
                     platform.log.debug('Switch state to ON');
-                    let onMode = platform.config.defaultOnMode;
+                    let onMode = device.config.defaultOnMode;
                     if (onMode === 'lastSyncMode') {
                         if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                             onMode = device.state.execution.lastSyncMode;
@@ -1344,12 +1353,12 @@ function SyncBoxDevice(platform, state) {
                             onMode = 'video';
                         }
                     }
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                         platform.log('Failed to switch state to ON');
                     });
                 } else {
                     platform.log.debug('Switch state to OFF');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                         platform.log('Failed to switch state to OFF');
                     });
                 }
@@ -1363,7 +1372,7 @@ function SyncBoxDevice(platform, state) {
 
                 // Saves the changes
                 platform.log.debug('Switch brightness to ' + value);
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
                     platform.log('Failed to switch brightness to ' + value);
                 });
 
@@ -1441,7 +1450,7 @@ function SyncBoxDevice(platform, state) {
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
-                let onMode = platform.config.defaultOnMode;
+                let onMode = device.config.defaultOnMode;
                 if (onMode === 'lastSyncMode') {
                     if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                         onMode = device.state.execution.lastSyncMode;
@@ -1449,12 +1458,12 @@ function SyncBoxDevice(platform, state) {
                         onMode = 'video';
                     }
                 }
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to ON');
                 });
             } else {
                 platform.log.debug('Switch state to OFF');
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                     platform.log('Failed to switch state to OFF');
                 });
             }
@@ -1483,7 +1492,7 @@ function SyncBoxDevice(platform, state) {
 
             // Saves the changes
             platform.log.debug('Switch entertainment area to ' + group.name);
-            platform.limiter.schedule(function () { return platform.client.updateHue({ 'groupId': groupId }); }).then(function () {}, function () {
+            device.limiter.schedule(function () { return device.client.updateHue({ 'groupId': groupId }); }).then(function () {}, function () {
                 platform.log('Failed to switch entertainment area to ' + group.name);
             });
 
@@ -1513,14 +1522,14 @@ function SyncBoxDevice(platform, state) {
             switch (value) {
                 case Characteristic.RemoteKey.ARROW_UP:
                     platform.log.debug('Increase brightness by 25%');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.min(200, device.state.execution.brightness + 50) }); }).then(function () { }, function () {
                         platform.log('Failed to increase brightness by 25%');
                     });
                     break;
                         
                 case Characteristic.RemoteKey.ARROW_DOWN:
                     platform.log.debug('Decrease brightness by 25%');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.max(0, device.state.execution.brightness - 50) }); }).then(function () { }, function () {
                         platform.log('Failed to decrease brightness by 25%');
                     });
                     break;
@@ -1540,17 +1549,17 @@ function SyncBoxDevice(platform, state) {
                         case 'subtle':
                             break;
                         case 'moderate':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'subtle' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'high':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'intense':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
@@ -1570,17 +1579,17 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle intensity');
                     switch (device.state.execution[mode].intensity) {
                         case 'subtle':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'moderate' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'moderate':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'high' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
                         case 'high':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'intensity': 'intense' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle intensity');
                             });
                             break;
@@ -1593,22 +1602,22 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle mode');
                     switch (device.state.execution.mode) {
                         case 'video':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'music' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'music':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'game' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'game':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'passthrough' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
                         case 'passthrough':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': 'video' }); }).then(function () {}, function () {
                                 platform.log('Failed to toggle mode');
                             });
                             break;
@@ -1618,11 +1627,11 @@ function SyncBoxDevice(platform, state) {
                 case Characteristic.RemoteKey.PLAY_PAUSE:
                     platform.log.debug('Toggle switch state');
                     if (device.state.execution.mode !== 'powersave' && device.state.execution.mode !== 'passthrough') {
-                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                        device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                             platform.log('Failed to toggle switch state');
                         });
                     } else {
-                        let onMode = platform.config.defaultOnMode;
+                        let onMode = device.config.defaultOnMode;
                         if (onMode === 'lastSyncMode') {
                             if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                                 onMode = device.state.execution.lastSyncMode;
@@ -1630,7 +1639,7 @@ function SyncBoxDevice(platform, state) {
                                 onMode = 'video';
                             }
                         }
-                        platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                        device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                             platform.log('Failed to toggle switch state');
                         });
                     }
@@ -1640,22 +1649,22 @@ function SyncBoxDevice(platform, state) {
                     device.platform.log.debug('Toggle hdmi source');
                     switch (device.state.execution.hdmiSource) {
                         case 'input1':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input2' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input2':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input3' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input3':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input4' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
                         case 'input4':
-                            platform.limiter.schedule(function () { return platform.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
+                            device.limiter.schedule(function () { return device.client.updateExecution({'hdmiSource': 'input1' }); }).then(function () {}, function () {
                                 platform.log('Failed to switch hdmi source');
                             });
                             break;
@@ -1671,7 +1680,7 @@ function SyncBoxDevice(platform, state) {
         device.entertainmentTvService = entertainmentTvService;
 
         // Handles the lightbulb accessory if it is enabled
-        if (platform.config.entertainmentTvAccessoryLightbulb) {
+        if (device.config.entertainmentTvAccessoryLightbulb) {
 
             // Updates the light bulb service
             let entertainmentTvAccessoryLightBulbService = entertainmentTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
@@ -1699,7 +1708,7 @@ function SyncBoxDevice(platform, state) {
                 // Saves the changes
                 if (value) {
                     platform.log.debug('Switch state to ON');
-                    let onMode = platform.config.defaultOnMode;
+                    let onMode = device.config.defaultOnMode;
                     if (onMode === 'lastSyncMode') {
                         if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
                             onMode = device.state.execution.lastSyncMode;
@@ -1707,12 +1716,12 @@ function SyncBoxDevice(platform, state) {
                             onMode = 'video';
                         }
                     }
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
                         platform.log('Failed to switch state to ON');
                     });
                 } else {
                     platform.log.debug('Switch state to OFF');
-                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                    device.limiter.schedule(function () { return device.client.updateExecution({ 'mode': device.config.defaultOffMode }); }).then(function () { }, function () {
                         platform.log('Failed to switch state to OFF');
                     });
                 }
@@ -1726,7 +1735,7 @@ function SyncBoxDevice(platform, state) {
 
                 // Saves the changes
                 platform.log.debug('Switch brightness to ' + value);
-                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+                device.limiter.schedule(function () { return device.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
                     platform.log('Failed to switch brightness to ' + value);
                 });
 
