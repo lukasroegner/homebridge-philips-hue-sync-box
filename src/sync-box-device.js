@@ -178,6 +178,17 @@ function SyncBoxDevice(platform, state) {
         // Subscribes for changes of the on characteristic
         lightBulbService.getCharacteristic(Characteristic.On).on('set', function (value, callback) {
 
+            // Ignores changes if the new value equals the old value
+            if (lightBulbService.getCharacteristic(Characteristic.On).value === value) {
+                if (value) {
+                    platform.log.debug('Switch state is already ON');
+                } else {
+                    platform.log.debug('Switch state is already OFF');
+                }
+                callback(null);
+                return;
+            }
+
             // Saves the changes
             if (value) {
                 platform.log.debug('Switch state to ON');
@@ -231,6 +242,17 @@ function SyncBoxDevice(platform, state) {
 
         // Subscribes for changes of the on characteristic
         switchService.getCharacteristic(Characteristic.On).on('set', function (value, callback) {
+
+            // Ignores changes if the new value equals the old value
+            if (switchService.getCharacteristic(Characteristic.On).value === value) {
+                if (value) {
+                    platform.log.debug('Switch state is already ON');
+                } else {
+                    platform.log.debug('Switch state is already OFF');
+                }
+                callback(null);
+                return;
+            }
 
             // Saves the changes
             if (value) {
@@ -309,6 +331,17 @@ function SyncBoxDevice(platform, state) {
 
         // Handles on/off events
         tvService.getCharacteristic(Characteristic.Active).on('set', function (value, callback) {
+
+            // Ignores changes if the new value equals the old value
+            if (tvService.getCharacteristic(Characteristic.Active).value === value) {
+                if (value) {
+                    platform.log.debug('Switch state is already ON');
+                } else {
+                    platform.log.debug('Switch state is already OFF');
+                }
+                callback(null);
+                return;
+            }
 
             // Saves the changes
             if (value) {
@@ -408,6 +441,17 @@ function SyncBoxDevice(platform, state) {
 
         // Handles on/off events
         modeTvService.getCharacteristic(Characteristic.Active).on('set', function (value, callback) {
+
+            // Ignores changes if the new value equals the old value
+            if (modeTvService.getCharacteristic(Characteristic.Active).value === value) {
+                if (value) {
+                    platform.log.debug('Switch state is already ON');
+                } else {
+                    platform.log.debug('Switch state is already OFF');
+                }
+                callback(null);
+                return;
+            }
 
             // Saves the changes
             if (value) {
@@ -522,6 +566,17 @@ function SyncBoxDevice(platform, state) {
 
         // Handles on/off events
         intensityTvService.getCharacteristic(Characteristic.Active).on('set', function (value, callback) {
+
+            // Ignores changes if the new value equals the old value
+            if (intensityTvService.getCharacteristic(Characteristic.Active).value === value) {
+                if (value) {
+                    platform.log.debug('Switch state is already ON');
+                } else {
+                    platform.log.debug('Switch state is already OFF');
+                }
+                callback(null);
+                return;
+            }
 
             // Saves the changes
             if (value) {
