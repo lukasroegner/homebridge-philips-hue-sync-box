@@ -560,10 +560,75 @@ function SyncBoxDevice(platform, state) {
 
         // Stores the tv service
         device.tvService = tvService;
+
+        // Handles the lightbulb accessory if it is enabled
+        if (platform.config.tvAccessoryLightbulb) {
+
+            // Updates the light bulb service
+            let tvAccessoryLightBulbService = tvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+            if (!tvAccessoryLightBulbService) {
+                tvAccessoryLightBulbService = tvAccessory.addService(Service.Lightbulb);
+            }
+
+            // Stores the light bulb service
+            device.tvAccessoryLightBulbService = tvAccessoryLightBulbService;
+
+            // Subscribes for changes of the on characteristic
+            tvAccessoryLightBulbService.getCharacteristic(Characteristic.On).on('set', function (value, callback) {
+
+                // Ignores changes if the new value equals the old value
+                if (tvAccessoryLightBulbService.getCharacteristic(Characteristic.On).value === value) {
+                    if (value) {
+                        platform.log.debug('Switch state is already ON');
+                    } else {
+                        platform.log.debug('Switch state is already OFF');
+                    }
+                    callback(null);
+                    return;
+                }
+
+                // Saves the changes
+                if (value) {
+                    platform.log.debug('Switch state to ON');
+                    let onMode = platform.config.defaultOnMode;
+                    if (onMode === 'lastSyncMode') {
+                        if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                            onMode = device.state.execution.lastSyncMode;
+                        } else {
+                            onMode = 'video';
+                        }
+                    }
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                        platform.log('Failed to switch state to ON');
+                    });
+                } else {
+                    platform.log.debug('Switch state to OFF');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                        platform.log('Failed to switch state to OFF');
+                    });
+                }
+
+                // Performs the callback
+                callback(null);
+            });
+
+            // Subscribes for changes of the brightness characteristic
+            tvAccessoryLightBulbService.getCharacteristic(Characteristic.Brightness).on('set', function (value, callback) {
+
+                // Saves the changes
+                platform.log.debug('Switch brightness to ' + value);
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+                    platform.log('Failed to switch brightness to ' + value);
+                });
+
+                // Performs the callback
+                callback(null);
+            });
+        }
     }
 
     // Handles the mode TV accessory if it is enabled
-    if(modeTvAccessory) {
+    if (modeTvAccessory) {
 
         // Updates tv service
         let modeTvService = modeTvAccessory.getServiceByUUIDAndSubType(Service.Television, 'ModeTVAccessory');
@@ -855,10 +920,75 @@ function SyncBoxDevice(platform, state) {
 
         // Stores the tv service
         device.modeTvService = modeTvService;
+
+        // Handles the lightbulb accessory if it is enabled
+        if (platform.config.modeTvAccessoryLightbulb) {
+
+            // Updates the light bulb service
+            let modeTvAccessoryLightBulbService = modeTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+            if (!modeTvAccessoryLightBulbService) {
+                modeTvAccessoryLightBulbService = modeTvAccessory.addService(Service.Lightbulb);
+            }
+
+            // Stores the light bulb service
+            device.modeTvAccessoryLightBulbService = modeTvAccessoryLightBulbService;
+
+            // Subscribes for changes of the on characteristic
+            modeTvAccessoryLightBulbService.getCharacteristic(Characteristic.On).on('set', function (value, callback) {
+
+                // Ignores changes if the new value equals the old value
+                if (modeTvAccessoryLightBulbService.getCharacteristic(Characteristic.On).value === value) {
+                    if (value) {
+                        platform.log.debug('Switch state is already ON');
+                    } else {
+                        platform.log.debug('Switch state is already OFF');
+                    }
+                    callback(null);
+                    return;
+                }
+
+                // Saves the changes
+                if (value) {
+                    platform.log.debug('Switch state to ON');
+                    let onMode = platform.config.defaultOnMode;
+                    if (onMode === 'lastSyncMode') {
+                        if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                            onMode = device.state.execution.lastSyncMode;
+                        } else {
+                            onMode = 'video';
+                        }
+                    }
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                        platform.log('Failed to switch state to ON');
+                    });
+                } else {
+                    platform.log.debug('Switch state to OFF');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                        platform.log('Failed to switch state to OFF');
+                    });
+                }
+
+                // Performs the callback
+                callback(null);
+            });
+
+            // Subscribes for changes of the brightness characteristic
+            modeTvAccessoryLightBulbService.getCharacteristic(Characteristic.Brightness).on('set', function (value, callback) {
+
+                // Saves the changes
+                platform.log.debug('Switch brightness to ' + value);
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+                    platform.log('Failed to switch brightness to ' + value);
+                });
+
+                // Performs the callback
+                callback(null);
+            });
+        }
     }
 
     // Handles the intensity TV accessory if it is enabled
-    if(intensityTvAccessory) {
+    if (intensityTvAccessory) {
 
         // Updates tv service
         let intensityTvService = intensityTvAccessory.getServiceByUUIDAndSubType(Service.Television, 'IntensityTVAccessory');
@@ -1150,6 +1280,71 @@ function SyncBoxDevice(platform, state) {
 
         // Stores the tv service
         device.intensityTvService = intensityTvService;
+
+        // Handles the lightbulb accessory if it is enabled
+        if (platform.config.intensityTvAccessoryLightbulb) {
+
+            // Updates the light bulb service
+            let intensityTvAccessoryLightBulbService = intensityTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+            if (!intensityTvAccessoryLightBulbService) {
+                intensityTvAccessoryLightBulbService = intensityTvAccessory.addService(Service.Lightbulb);
+            }
+
+            // Stores the light bulb service
+            device.intensityTvAccessoryLightBulbService = intensityTvAccessoryLightBulbService;
+
+            // Subscribes for changes of the on characteristic
+            intensityTvAccessoryLightBulbService.getCharacteristic(Characteristic.On).on('set', function (value, callback) {
+
+                // Ignores changes if the new value equals the old value
+                if (intensityTvAccessoryLightBulbService.getCharacteristic(Characteristic.On).value === value) {
+                    if (value) {
+                        platform.log.debug('Switch state is already ON');
+                    } else {
+                        platform.log.debug('Switch state is already OFF');
+                    }
+                    callback(null);
+                    return;
+                }
+
+                // Saves the changes
+                if (value) {
+                    platform.log.debug('Switch state to ON');
+                    let onMode = platform.config.defaultOnMode;
+                    if (onMode === 'lastSyncMode') {
+                        if (device.state && device.state.execution && device.state.execution.lastSyncMode) {
+                            onMode = device.state.execution.lastSyncMode;
+                        } else {
+                            onMode = 'video';
+                        }
+                    }
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': onMode }); }).then(function () { }, function () {
+                        platform.log('Failed to switch state to ON');
+                    });
+                } else {
+                    platform.log.debug('Switch state to OFF');
+                    platform.limiter.schedule(function () { return platform.client.updateExecution({ 'mode': platform.config.defaultOffMode }); }).then(function () { }, function () {
+                        platform.log('Failed to switch state to OFF');
+                    });
+                }
+
+                // Performs the callback
+                callback(null);
+            });
+
+            // Subscribes for changes of the brightness characteristic
+            intensityTvAccessoryLightBulbService.getCharacteristic(Characteristic.Brightness).on('set', function (value, callback) {
+
+                // Saves the changes
+                platform.log.debug('Switch brightness to ' + value);
+                platform.limiter.schedule(function () { return platform.client.updateExecution({ 'brightness': Math.round((value / 100.0) * 200) }); }).then(function () { }, function () {
+                    platform.log('Failed to switch brightness to ' + value);
+                });
+
+                // Performs the callback
+                callback(null);
+            });
+        }
     }
 
     // Publishes the external accessories (i.e. the TV accessories)
@@ -1202,6 +1397,18 @@ SyncBoxDevice.prototype.update = function (state) {
         // Updates the HDMI input characteristic
         device.platform.log.debug('Updated HDMI input to ' + state.execution.hdmiSource);
         device.tvService.updateCharacteristic(Characteristic.ActiveIdentifier, parseInt(state.execution.hdmiSource.replace('input', '')));
+
+        // Updates the corresponding service
+        if (device.tvAccessoryLightBulbService) {
+
+            // Updates the on characteristic
+            device.platform.log.debug('Updated state to ' + state.execution.mode);
+            device.tvAccessoryLightBulbService.updateCharacteristic(Characteristic.On, state.execution.mode !== 'powersave' && state.execution.mode !== 'passthrough');
+
+            // Updates the brightness characteristic
+            device.platform.log.debug('Updated brightness to ' + state.execution.brightness);
+            device.tvAccessoryLightBulbService.updateCharacteristic(Characteristic.Brightness, Math.round((state.execution.brightness / 200.0) * 100));
+        }
     }
 
     // Updates the corresponding service of the mode TV accessory
@@ -1226,6 +1433,18 @@ SyncBoxDevice.prototype.update = function (state) {
             case 'passthrough':
                 device.modeTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 4);
                 break;
+        }
+
+        // Updates the corresponding service
+        if (device.modeTvAccessoryLightBulbService) {
+
+            // Updates the on characteristic
+            device.platform.log.debug('Updated state to ' + state.execution.mode);
+            device.modeTvAccessoryLightBulbService.updateCharacteristic(Characteristic.On, state.execution.mode !== 'powersave' && state.execution.mode !== 'passthrough');
+
+            // Updates the brightness characteristic
+            device.platform.log.debug('Updated brightness to ' + state.execution.brightness);
+            device.modeTvAccessoryLightBulbService.updateCharacteristic(Characteristic.Brightness, Math.round((state.execution.brightness / 200.0) * 100));
         }
     }
 
@@ -1259,6 +1478,18 @@ SyncBoxDevice.prototype.update = function (state) {
             case 'intense':
                 device.intensityTvService.updateCharacteristic(Characteristic.ActiveIdentifier, 4);
                 break;
+        }
+
+        // Updates the corresponding service
+        if (device.intensityTvAccessoryLightBulbService) {
+
+            // Updates the on characteristic
+            device.platform.log.debug('Updated state to ' + state.execution.mode);
+            device.intensityTvAccessoryLightBulbService.updateCharacteristic(Characteristic.On, state.execution.mode !== 'powersave' && state.execution.mode !== 'passthrough');
+
+            // Updates the brightness characteristic
+            device.platform.log.debug('Updated brightness to ' + state.execution.brightness);
+            device.intensityTvAccessoryLightBulbService.updateCharacteristic(Characteristic.Brightness, Math.round((state.execution.brightness / 200.0) * 100));
         }
     }
 }

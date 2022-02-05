@@ -61,6 +61,13 @@
                     { "title": "Audio Receiver", "enum": ["audioreceiver"] }
                 ]
             },
+            "tvAccessoryLightbulb": {
+                "title": "Enable lightbulb for HDMI TV",
+                "type": "boolean",
+                "default": false,
+                "required": false,
+                "description": "Enables an integrated lightbulb for the TV Accessory."
+            },
             "modeTvAccessory": {
                 "title": "Enable Mode TV",
                 "type": "boolean",
@@ -79,6 +86,13 @@
                     { "title": "Audio Receiver", "enum": ["audioreceiver"] }
                 ]
             },
+            "modeTvAccessoryLightbulb": {
+                "title": "Enable lightbulb for Mode TV",
+                "type": "boolean",
+                "default": false,
+                "required": false,
+                "description": "Enables an integrated lightbulb for the TV Accessory."
+            },
             "intensityTvAccessory": {
                 "title": "Enable Intensity TV",
                 "type": "boolean",
@@ -96,6 +110,13 @@
                     { "title": "TV Stick", "enum": ["tvstick"] },
                     { "title": "Audio Receiver", "enum": ["audioreceiver"] }
                 ]
+            },
+            "intensityTvAccessoryLightbulb": {
+                "title": "Enable lightbulb for Intensity TV",
+                "type": "boolean",
+                "default": false,
+                "required": false,
+                "description": "Enables an integrated lightbulb for the TV Accessory."
             },
             "isApiEnabled": {
                 "title": "Enable API",

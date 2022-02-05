@@ -21,6 +21,10 @@ Each of the additional TV accessories supports the iOS remote widget:
 * Information button: toggle HDMI inputs
 * Play/Pause: toggle on/off
 
+Additionally, each TV accessory can have an integrated lightbulb with support for:
+* On/Off
+* Brightness
+
 **Important**: TV accessories must be added to HomeKit manually, the logs show the pin for adding them (should be the same pin as for the plugin).
 
 ## Installation
@@ -61,10 +65,13 @@ Hints:
             "baseAccessory": "lightbulb",
             "tvAccessory": false,
             "tvAccessoryType": "tv",
+            "tvAccessoryLightbulb": false,
             "modeTvAccessory": false,
             "modeTvAccessoryType": "tv",
+            "modeTvAccessoryLightbulb": false,
             "intensityTvAccessory": false,
             "intensityTvAccessoryType": "tv",
+            "intensityTvAccessoryLightbulb": false,
             "isApiEnabled": false,
             "apiPort": 40220,
             "apiToken": "<YOUR-TOKEN>"
@@ -87,13 +94,19 @@ Hints:
 
 **tvAccessoryType** (optional): Type of icon that the Apple Home app should show. Possible values are `tv`, `settopbox`, `tvstick` or `audioreceiver`. Defaults to `tv`.
 
+**tvAccessoryLightbulb** (optional): Enables an integrated lightbulb for the TV Accessory for switching the inputs. Defaults to `false`.
+
 **modeTvAccessory** (optional): Enables a TV Accessory for switching the modes (`video`, `music`, `game`) of the Sync Box. Defaults to `false`.
 
 **modeTvAccessoryType** (optional): Type of icon that the Apple Home app should show. Possible values are `tv`, `settopbox`, `tvstick` or `audioreceiver`. Defaults to `tv`.
 
+**modeTvAccessoryLightbulb** (optional): Enables an integrated lightbulb for the TV Accessory for switching the modes. Defaults to `false`.
+
 **intensityTvAccessory** (optional): Enables a TV Accessory for switching the intensity (`subtle`, `moderate`, `high`, `intense`) of the Sync Box. Defaults to `false`.
 
 **intensityTvAccessoryType** (optional): Type of icon that the Apple Home app should show. Possible values are `tv`, `settopbox`, `tvstick` or `audioreceiver`. Defaults to `tv`.
+
+**intensityTvAccessoryLightbulb** (optional): Enables an integrated lightbulb for the  TV Accessory for switching the intensity. Defaults to `false`.
 
 **isApiEnabled** (optional): Enables an HTTP API for controlling the Sync Box. Defaults to `false`. See **API** for more information.
 
