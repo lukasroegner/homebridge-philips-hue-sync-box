@@ -38,8 +38,9 @@ function PhilipsHueSyncBoxPlatform(log, config, api) {
     // Initializes the configuration
     platform.config.syncBoxIpAddress = platform.config.syncBoxIpAddress || null;
     platform.config.syncBoxApiAccessToken = platform.config.syncBoxApiAccessToken || null;
-    platform.config.defaultOnMode = platform.config.defaultOnMode || 'video';
-    platform.config.defaultOffMode = platform.config.defaultOffMode || 'passthrough';
+    platform.config.defaultOnMode = platform.config.defaultOnMode || 'video';
+    platform.config.defaultOffMode = platform.config.defaultOffMode || 'passthrough';
+    platform.config.baseAccessory = platform.config.baseAccessory || 'lightbulb';
     platform.config.isApiEnabled = platform.config.isApiEnabled || false;
     platform.config.apiPort = platform.config.apiPort || 40220;
     platform.config.apiToken = platform.config.apiToken || null;
@@ -69,7 +70,7 @@ function PhilipsHueSyncBoxPlatform(log, config, api) {
     platform.api = api;
 
     // Checks if all required information is provided
-    if (!platform.config.syncBoxIpAddress || !platform.config.syncBoxApiAccessToken) {
+    if (!platform.config.syncBoxIpAddress || !platform.config.syncBoxApiAccessToken) {
         platform.log('No Sync Box IP address or access token provided.');
         return;
     }

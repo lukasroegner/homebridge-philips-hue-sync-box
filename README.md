@@ -2,9 +2,12 @@
 
 Homebridge plugin for the Philips Hue Sync Box. 
 
-The Sync Box is exposed as a lightbulb. The following features are currently supported:
+The Sync Box can be exposed as a lightbulb. The following features are supported:
 * On/Off
 * Brightness
+
+The Sync Box can be exposed as a switch. The following features are supported:
+* On/Off
 
 You can also enable additional TV accessories that support:
 * Switching HDMI inputs
@@ -48,6 +51,7 @@ Hints:
             "syncBoxApiAccessToken": "<ACCESS-TOKEN>",
             "defaultOnMode": "video",
             "defaultOffMode": "passthrough",
+            "baseAccessory": "lightbulb",
             "tvAccessory": false,
             "tvAccessoryType": "tv",
             "modeTvAccessory": false,
@@ -69,6 +73,8 @@ Hints:
 **defaultOnMode** (optional): The mode that is used when switching the Sync Box on via HomeKit. Defaults to `video`. Possible values are `video`, `music`, `game` or `lastSyncMode`.
 
 **defaultOffMode** (optional): The mode that is used when switching the Sync Box off via HomeKit. Defaults to `passthrough`. Possible values are `powersave` or `passthrough`.
+
+**baseAccessory** (optional): Determines the type of the base accessory for the Sync Box. Defaults to `lightbulb`. Possible values are `lightbulb`, `switch` or `none`. If `none` is used, no base accessory is exposed.
 
 **tvAccessory** (optional): Enables a TV Accessory for switching the inputs of the Sync Box. Defaults to `false`.
 

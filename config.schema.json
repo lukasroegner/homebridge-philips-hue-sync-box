@@ -33,6 +33,16 @@
                 "placeholder": "passthrough",
                 "description": "The mode that is used when switching the Sync Box off via HomeKit. Possible values are 'powersave' or 'passthrough'."
             },
+            "baseAccessory": {
+                "title": "Base Accessory Type",
+                "type": "string",
+                "default": "Lightbulb",
+                "oneOf": [
+                    { "title": "Lightbulb", "enum": ["lightbulb"] },
+                    { "title": "Switch", "enum": ["switch"] },
+                    { "title": "None", "enum": ["none"] }
+                ]
+            },
             "tvAccessory": {
                 "title": "Enable HDMI TV",
                 "type": "boolean",
