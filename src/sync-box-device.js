@@ -33,7 +33,7 @@ function SyncBoxDevice(platform, config, client, limiter, state) {
             unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(lightBulbAccessory), 1);
         } else {
             platform.log('Adding new accessory with kind LightBulbAccessory.');
-            lightBulbAccessory = new Accessory(state.device.name, UUIDGen.generate('LightBulbAccessory'));
+            lightBulbAccessory = new Accessory(state.device.name, UUIDGen.generate(device.config.syncBoxIpAddress + 'LightBulbAccessory'));
             lightBulbAccessory.context.kind = 'LightBulbAccessory';
             lightBulbAccessory.context.ipAddress = device.config.syncBoxIpAddress;
             newDeviceAccessories.push(lightBulbAccessory);
@@ -51,7 +51,7 @@ function SyncBoxDevice(platform, config, client, limiter, state) {
             unusedDeviceAccessories.splice(unusedDeviceAccessories.indexOf(switchAccessory), 1);
         } else {
             platform.log('Adding new accessory with kind SwitchAccessory.');
-            switchAccessory = new Accessory(state.device.name, UUIDGen.generate('SwitchAccessory'));
+            switchAccessory = new Accessory(state.device.name, UUIDGen.generate(device.config.syncBoxIpAddress + 'SwitchAccessory'));
             switchAccessory.context.kind = 'SwitchAccessory';
             switchAccessory.context.ipAddress = device.config.syncBoxIpAddress;
             newDeviceAccessories.push(switchAccessory);
@@ -65,7 +65,7 @@ function SyncBoxDevice(platform, config, client, limiter, state) {
     let tvAccessory;
     if (device.config.tvAccessory) {
         platform.log('Setting up accessory with kind TVAccessory.');
-        tvAccessory = new Accessory(state.device.name, UUIDGen.generate('TVAccessory'));
+        tvAccessory = new Accessory(state.device.name, UUIDGen.generate(device.config.syncBoxIpAddress + 'TVAccessory'));
         switch (device.config.tvAccessoryType) {
             case 'settopbox':
                 tvAccessory.category = Categories.TV_SET_TOP_BOX;
@@ -90,7 +90,7 @@ function SyncBoxDevice(platform, config, client, limiter, state) {
     let modeTvAccessory;
     if (device.config.modeTvAccessory) {
         platform.log('Setting up accessory with kind ModeTVAccessory.');
-        modeTvAccessory = new Accessory(state.device.name, UUIDGen.generate('ModeTVAccessory'));
+        modeTvAccessory = new Accessory(state.device.name, UUIDGen.generate(device.config.syncBoxIpAddress + 'ModeTVAccessory'));
         switch (device.config.modeTvAccessoryType) {
             case 'settopbox':
                 modeTvAccessory.category = Categories.TV_SET_TOP_BOX;
@@ -115,7 +115,7 @@ function SyncBoxDevice(platform, config, client, limiter, state) {
     let intensityTvAccessory;
     if (device.config.intensityTvAccessory) {
         platform.log('Adding new accessory with kind IntensityTVAccessory.');
-        intensityTvAccessory = new Accessory(state.device.name, UUIDGen.generate('IntensityTVAccessory'));
+        intensityTvAccessory = new Accessory(state.device.name, UUIDGen.generate(device.config.syncBoxIpAddress + 'IntensityTVAccessory'));
         switch (device.config.intensityTvAccessoryType) {
             case 'settopbox':
                 intensityTvAccessory.category = Categories.TV_SET_TOP_BOX;
@@ -140,7 +140,7 @@ function SyncBoxDevice(platform, config, client, limiter, state) {
     let entertainmentTvAccessory;
     if (device.config.entertainmentTvAccessory) {
         platform.log('Adding new accessory with kind EntertainmentTVAccessory.');
-        entertainmentTvAccessory = new Accessory(state.device.name, UUIDGen.generate('EntertainmentTVAccessory'));
+        entertainmentTvAccessory = new Accessory(state.device.name, UUIDGen.generate(device.config.syncBoxIpAddress + 'EntertainmentTVAccessory'));
         switch (device.config.entertainmentTvAccessoryType) {
             case 'settopbox':
                 entertainmentTvAccessory.category = Categories.TV_SET_TOP_BOX;
