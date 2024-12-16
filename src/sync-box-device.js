@@ -193,7 +193,7 @@ function SyncBoxDevice(platform, state) {
     if (lightBulbAccessory) {
 
         // Updates the light bulb service
-        let lightBulbService = lightBulbAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+        let lightBulbService = lightBulbAccessory.getServiceById(Service.Lightbulb);
         if (!lightBulbService) {
             lightBulbService = lightBulbAccessory.addService(Service.Lightbulb);
         }
@@ -258,7 +258,7 @@ function SyncBoxDevice(platform, state) {
     if (switchAccessory) {
 
         // Updates the switch service
-        let switchService = switchAccessory.getServiceByUUIDAndSubType(Service.Switch);
+        let switchService = switchAccessory.getServiceById(Service.Switch);
         if (!switchService) {
             switchService = switchAccessory.addService(Service.Switch);
         }
@@ -310,7 +310,7 @@ function SyncBoxDevice(platform, state) {
     if(tvAccessory) {
 
         // Updates tv service
-        let tvService = tvAccessory.getServiceByUUIDAndSubType(Service.Television);
+        let tvService = tvAccessory.getServiceById(Service.Television);
         if (!tvService) {
             tvService = tvAccessory.addService(Service.Television);
 
@@ -329,7 +329,7 @@ function SyncBoxDevice(platform, state) {
         // Register HDMI sources
         const hdmiInputServices = [];
         for (let i = 1; i <= 4; i++) {
-            let hdmiInputService = tvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'HDMI ' + i);
+            let hdmiInputService = tvAccessory.getServiceById(Service.InputSource, 'HDMI ' + i);
             if (!hdmiInputService) {
                 hdmiInputService = tvAccessory.addService(Service.InputSource, 'hdmi' + i, 'HDMI ' + i);
 
@@ -591,7 +591,7 @@ function SyncBoxDevice(platform, state) {
         if (platform.config.tvAccessoryLightbulb) {
 
             // Updates the light bulb service
-            let tvAccessoryLightBulbService = tvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+            let tvAccessoryLightBulbService = tvAccessory.getServiceById(Service.Lightbulb);
             if (!tvAccessoryLightBulbService) {
                 tvAccessoryLightBulbService = tvAccessory.addService(Service.Lightbulb);
             }
@@ -657,7 +657,7 @@ function SyncBoxDevice(platform, state) {
     if (modeTvAccessory) {
 
         // Updates tv service
-        let modeTvService = modeTvAccessory.getServiceByUUIDAndSubType(Service.Television, 'ModeTVAccessory');
+        let modeTvService = modeTvAccessory.getServiceById(Service.Television, 'ModeTVAccessory');
         if (!modeTvService) {
             modeTvService = modeTvAccessory.addService(Service.Television, 'Mode', 'ModeTVAccessory');
 
@@ -677,7 +677,7 @@ function SyncBoxDevice(platform, state) {
         const modeInputServices = [];
         const modes = ['none', 'Video', 'Music', 'Game', 'Passthrough'];
         for (let i = 1; i <= 4; i++) {
-            let modeInputService = modeTvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'MODE ' + i);
+            let modeInputService = modeTvAccessory.getServiceById(Service.InputSource, 'MODE ' + i);
             if (!modeInputService) {
                 modeInputService = modeTvAccessory.addService(Service.InputSource, 'mode' + i, 'MODE ' + i);
 
@@ -951,7 +951,7 @@ function SyncBoxDevice(platform, state) {
         if (platform.config.modeTvAccessoryLightbulb) {
 
             // Updates the light bulb service
-            let modeTvAccessoryLightBulbService = modeTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+            let modeTvAccessoryLightBulbService = modeTvAccessory.getServiceById(Service.Lightbulb);
             if (!modeTvAccessoryLightBulbService) {
                 modeTvAccessoryLightBulbService = modeTvAccessory.addService(Service.Lightbulb);
             }
@@ -1017,7 +1017,7 @@ function SyncBoxDevice(platform, state) {
     if (intensityTvAccessory) {
 
         // Updates tv service
-        let intensityTvService = intensityTvAccessory.getServiceByUUIDAndSubType(Service.Television, 'IntensityTVAccessory');
+        let intensityTvService = intensityTvAccessory.getServiceById(Service.Television, 'IntensityTVAccessory');
         if (!intensityTvService) {
             intensityTvService = intensityTvAccessory.addService(Service.Television, 'Intensity', 'IntensityTVAccessory');
 
@@ -1037,7 +1037,7 @@ function SyncBoxDevice(platform, state) {
         const intensityInputServices = [];
         const intensities = ['none', 'Subtle' , 'Moderate', 'High', 'Intense'];
         for (let i = 1; i <= 4; i++) {
-            let intensityInputService = intensityTvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'INTENSITY ' + i);
+            let intensityInputService = intensityTvAccessory.getServiceById(Service.InputSource, 'INTENSITY ' + i);
             if (!intensityInputService) {
                 intensityInputService = intensityTvAccessory.addService(Service.InputSource, 'intensity' + i, 'INTENSITY ' + i);
 
@@ -1311,7 +1311,7 @@ function SyncBoxDevice(platform, state) {
         if (platform.config.intensityTvAccessoryLightbulb) {
 
             // Updates the light bulb service
-            let intensityTvAccessoryLightBulbService = intensityTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+            let intensityTvAccessoryLightBulbService = intensityTvAccessory.getServiceById(Service.Lightbulb);
             if (!intensityTvAccessoryLightBulbService) {
                 intensityTvAccessoryLightBulbService = intensityTvAccessory.addService(Service.Lightbulb);
             }
@@ -1377,7 +1377,7 @@ function SyncBoxDevice(platform, state) {
     if (entertainmentTvAccessory) {
 
         // Updates tv service
-        let entertainmentTvService = entertainmentTvAccessory.getServiceByUUIDAndSubType(Service.Television, 'EntertainmentTVAccessory');
+        let entertainmentTvService = entertainmentTvAccessory.getServiceById(Service.Television, 'EntertainmentTVAccessory');
         if (!entertainmentTvService) {
             entertainmentTvService = entertainmentTvAccessory.addService(Service.Television, 'Entertainment Area', 'EntertainmentTVAccessory');
 
@@ -1399,7 +1399,7 @@ function SyncBoxDevice(platform, state) {
         for (let groupId in device.state.hue.groups) {
             const group = device.state.hue.groups[groupId];
 
-            let entertainmentInputService = entertainmentTvAccessory.getServiceByUUIDAndSubType(Service.InputSource, 'AREA ' + i);
+            let entertainmentInputService = entertainmentTvAccessory.getServiceById(Service.InputSource, 'AREA ' + i);
             if (!entertainmentInputService) {
                 entertainmentInputService = entertainmentTvAccessory.addService(Service.InputSource, 'area' + i, 'AREA ' + i);
 
@@ -1674,7 +1674,7 @@ function SyncBoxDevice(platform, state) {
         if (platform.config.entertainmentTvAccessoryLightbulb) {
 
             // Updates the light bulb service
-            let entertainmentTvAccessoryLightBulbService = entertainmentTvAccessory.getServiceByUUIDAndSubType(Service.Lightbulb);
+            let entertainmentTvAccessoryLightBulbService = entertainmentTvAccessory.getServiceById(Service.Lightbulb);
             if (!entertainmentTvAccessoryLightBulbService) {
                 entertainmentTvAccessoryLightBulbService = entertainmentTvAccessory.addService(Service.Lightbulb);
             }
