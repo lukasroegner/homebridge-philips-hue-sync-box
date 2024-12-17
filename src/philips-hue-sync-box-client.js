@@ -17,7 +17,7 @@ function PhilipsHueSyncBoxClient(platform) {
  */
 PhilipsHueSyncBoxClient.prototype.getState = function () {
     const client = this;
-    
+
     // Sends the request
     return client.send('GET', '', null);
 }
@@ -27,7 +27,7 @@ PhilipsHueSyncBoxClient.prototype.getState = function () {
  */
 PhilipsHueSyncBoxClient.prototype.updateExecution = function (settings) {
     const client = this;
-    
+
     // Sends the request
     return client.send('PUT', '/execution', settings);
 }
@@ -37,7 +37,7 @@ PhilipsHueSyncBoxClient.prototype.updateExecution = function (settings) {
  */
 PhilipsHueSyncBoxClient.prototype.updateHue = function (settings) {
     const client = this;
-    
+
     // Sends the request
     return client.send('PUT', '/hue', settings);
 }
